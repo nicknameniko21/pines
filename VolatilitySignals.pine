@@ -1,0 +1,184 @@
+//@version=5
+indicator("Volatility Signals", shorttitle="VolSig", overlay=true, max_bars_back=500)
+
+// ════════════════════════════════════════════════════════════════════════
+// INPUT PARAMETERS
+// ════════════════════════════════════════════════════════════════════════
+
+// RSI Settings
+rsiLength = input.int(14, title="RSI Length", minval=1, group="RSI Settings")
+rsiOverbought = input.int(70, title="RSI Overbought", minval=50, maxval=100, group="RSI Settings")
+rsiOversold = input.int(30, title="RSI Oversold", minval=0, maxval=50, group="RSI Settings")
+
+// EMA Settings
+emaFastLength = input.int(9, title="Fast EMA Length", minval=1, group="EMA Settings")
+emaSlowLength = input.int(21, title="Slow EMA Length", minval=1, group="EMA Settings")
+
+// Bollinger Bands Settings
+bbLength = input.int(20, title="BB Length", minval=1, group="Bollinger Bands")
+bbMult = input.float(2.0, title="BB Multiplier", minval=0.1, step=0.1, group="Bollinger Bands")
+
+// ATR Settings
+atrLength = input.int(14, title="ATR Length", minval=1, group="ATR Settings")
+atrMultiplier = input.float(1.5, title="ATR Multiplier", minval=0.1, step=0.1, group="ATR Settings")
+
+// Volume Settings
+volumeMALength = input.int(20, title="Volume MA Length", minval=1, group="Volume Settings")
+volumeMultiplier = input.float(1.5, title="Volume Threshold Multiplier", minval=0.1, step=0.1, group="Volume Settings")
+
+// Signal Settings
+enableRSI = input.bool(true, title="Enable RSI Signals", group="Signal Filters")
+enableEMA = input.bool(true, title="Enable EMA Signals", group="Signal Filters")
+enableBB = input.bool(true, title="Enable BB Signals", group="Signal Filters")
+enableVolume = input.bool(true, title="Enable Volume Filter", group="Signal Filters")
+
+// ════════════════════════════════════════════════════════════════════════
+// INDICATOR CALCULATIONS
+// ════════════════════════════════════════════════════════════════════════
+
+// RSI Calculation
+rsiValue = ta.rsi(close, rsiLength)
+
+// EMA Calculation
+emaFast = ta.ema(close, emaFastLength)
+emaSlow = ta.ema(close, emaSlowLength)
+
+// Bollinger Bands Calculation
+bbBasis = ta.sma(close, bbLength)
+bbDev = bbMult * ta.stdev(close, bbLength)
+bbUpper = bbBasis + bbDev
+bbLower = bbBasis - bbDev
+
+// ATR Calculation
+atrValue = ta.atr(atrLength)
+
+// Volume Analysis
+volumeMA = ta.sma(volume, volumeMALength)
+isHighVolume = volume > volumeMA * volumeMultiplier
+
+// ════════════════════════════════════════════════════════════════════════
+// SIGNAL LOGIC
+// ════════════════════════════════════════════════════════════════════════
+
+// RSI Signals
+rsiBullish = rsiValue < rsiOversold
+rsiBearish = rsiValue > rsiOverbought
+
+// EMA Crossover Signals
+emaBullishCross = ta.crossover(emaFast, emaSlow)
+emaBearishCross = ta.crossunder(emaFast, emaSlow)
+
+// Bollinger Bands Signals
+bbBullish = close < bbLower
+bbBearish = close > bbUpper
+
+// Price momentum (using close vs previous close)
+priceBullish = close > close[1]
+priceBearish = close < close[1]
+
+// Combined Buy Signal
+buySignal = (not enableRSI or rsiBullish) and 
+            (not enableEMA or emaBullishCross) and 
+            (not enableBB or bbBullish) and 
+            (not enableVolume or isHighVolume)
+
+// Combined Sell Signal
+sellSignal = (not enableRSI or rsiBearish) and 
+             (not enableEMA or emaBearishCross) and 
+             (not enableBB or bbBearish) and 
+             (not enableVolume or isHighVolume)
+
+// ════════════════════════════════════════════════════════════════════════
+// PLOTTING
+// ════════════════════════════════════════════════════════════════════════
+
+// Plot EMAs
+plot(emaFast, color=color.new(color.blue, 0), linewidth=2, title="Fast EMA")
+plot(emaSlow, color=color.new(color.red, 0), linewidth=2, title="Slow EMA")
+
+// Plot Bollinger Bands
+p1 = plot(bbUpper, color=color.new(color.gray, 70), title="BB Upper")
+p2 = plot(bbLower, color=color.new(color.gray, 70), title="BB Lower")
+p3 = plot(bbBasis, color=color.new(color.orange, 50), title="BB Basis")
+fill(p1, p2, color=color.new(color.gray, 90), title="BB Fill")
+
+// Plot Buy/Sell Signals
+plotshape(buySignal, style=shape.labelup, location=location.belowbar, 
+          color=color.new(color.green, 0), size=size.normal, 
+          title="Buy Signal", text="BUY")
+
+plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, 
+          color=color.new(color.red, 0), size=size.normal, 
+          title="Sell Signal", text="SELL")
+
+// Background color based on trend
+trendColor = emaFast > emaSlow ? color.new(color.green, 95) : color.new(color.red, 95)
+bgcolor(trendColor, title="Trend Background")
+
+// ════════════════════════════════════════════════════════════════════════
+// ALERT CONDITIONS
+// ════════════════════════════════════════════════════════════════════════
+
+alertcondition(buySignal, title="Buy Signal Alert", 
+               message="Volatility Signals: BUY signal detected!")
+
+alertcondition(sellSignal, title="Sell Signal Alert", 
+               message="Volatility Signals: SELL signal detected!")
+
+alertcondition(emaBullishCross, title="Bullish EMA Cross", 
+               message="Volatility Signals: Fast EMA crossed above Slow EMA")
+
+alertcondition(emaBearishCross, title="Bearish EMA Cross", 
+               message="Volatility Signals: Fast EMA crossed below Slow EMA")
+
+// ════════════════════════════════════════════════════════════════════════
+// TABLE - INDICATOR VALUES DISPLAY
+// ════════════════════════════════════════════════════════════════════════
+
+var table infoTable = table.new(position.top_right, 2, 6, 
+                                 border_width=1, 
+                                 border_color=color.gray, 
+                                 frame_width=1, 
+                                 frame_color=color.gray)
+
+if barstate.islast
+    // Header
+    table.cell(infoTable, 0, 0, "Indicator", 
+               text_color=color.white, bgcolor=color.new(color.gray, 30))
+    table.cell(infoTable, 1, 0, "Value", 
+               text_color=color.white, bgcolor=color.new(color.gray, 30))
+    
+    // RSI
+    rsiColor = rsiValue > rsiOverbought ? color.red : 
+               rsiValue < rsiOversold ? color.green : color.gray
+    table.cell(infoTable, 0, 1, "RSI", text_color=color.white)
+    table.cell(infoTable, 1, 1, str.tostring(rsiValue, "#.##"), 
+               text_color=color.white, bgcolor=color.new(rsiColor, 70))
+    
+    // EMA Trend
+    emaTrendText = emaFast > emaSlow ? "Bullish" : "Bearish"
+    emaTrendColor = emaFast > emaSlow ? color.green : color.red
+    table.cell(infoTable, 0, 2, "EMA Trend", text_color=color.white)
+    table.cell(infoTable, 1, 2, emaTrendText, 
+               text_color=color.white, bgcolor=color.new(emaTrendColor, 70))
+    
+    // BB Position
+    bbPosition = close > bbUpper ? "Above Upper" : 
+                 close < bbLower ? "Below Lower" : "In Range"
+    bbPosColor = close > bbUpper ? color.red : 
+                 close < bbLower ? color.green : color.gray
+    table.cell(infoTable, 0, 3, "BB Position", text_color=color.white)
+    table.cell(infoTable, 1, 3, bbPosition, 
+               text_color=color.white, bgcolor=color.new(bbPosColor, 70))
+    
+    // ATR
+    table.cell(infoTable, 0, 4, "ATR", text_color=color.white)
+    table.cell(infoTable, 1, 4, str.tostring(atrValue, "#.####"), 
+               text_color=color.white, bgcolor=color.new(color.blue, 70))
+    
+    // Volume Status
+    volumeText = isHighVolume ? "High" : "Normal"
+    volumeColor = isHighVolume ? color.orange : color.gray
+    table.cell(infoTable, 0, 5, "Volume", text_color=color.white)
+    table.cell(infoTable, 1, 5, volumeText, 
+               text_color=color.white, bgcolor=color.new(volumeColor, 70))
