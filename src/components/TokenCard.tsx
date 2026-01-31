@@ -94,7 +94,7 @@ export function TokenCard({ token, isUpdating, timeframe = "24h" }: TokenCardPro
             <span className="text-muted-foreground">Volatility Score</span>
             <div className="flex items-center gap-2">
               <Badge
-                variant={volatilityLevel === "extreme" ? "destructive" : volatilityLevel === "high" ? "default" : "secondary"}
+                variant={volatilityLevel === "extreme" ? "default" : volatilityLevel === "high" ? "secondary" : "secondary"}
                 className="text-xs uppercase"
                 data-testid={`badge-volatility-${token.id}`}
               >
