@@ -1,0 +1,210 @@
+//@version=5
+indicator("Volatility Score v2", shorttitle="VolScore2", overlay=false, timeframe="", timeframe_gaps=true)
+
+// ════════════════════════════════════════════════════════════════════════
+// INPUT PARAMETERS - Tunable Component Weightings
+// ════════════════════════════════════════════════════════════════════════
+
+// Component Weights (adaptive tuning)
+atrWeight = input.float(0.40, title="ATR Weight", minval=0.0, maxval=1.0, step=0.05, 
+            group="Component Weights", tooltip="Weight for ATR component in volatility score")
+bbWidth = input.float(0.35, title="Bollinger Bands Weight", minval=0.0, maxval=1.0, step=0.05, 
+            group="Component Weights", tooltip="Weight for Bollinger Bands width component")
+stdDevWeight = input.float(0.25, title="Std Dev Weight", minval=0.0, maxval=1.0, step=0.05, 
+            group="Component Weights", tooltip="Weight for standard deviation component")
+
+// ATR Settings
+atrLength = input.int(14, title="ATR Length", minval=1, group="ATR Settings")
+
+// Bollinger Bands Settings
+bbLength = input.int(20, title="BB Length", minval=1, group="Bollinger Bands")
+bbMult = input.float(2.0, title="BB Multiplier", minval=0.1, step=0.1, group="Bollinger Bands")
+
+// Standard Deviation Settings
+stdDevLength = input.int(20, title="StdDev Length", minval=1, group="Standard Deviation")
+
+// Volatility Thresholds
+highVolThreshold = input.float(70.0, title="High Volatility Threshold", minval=50.0, maxval=100.0, 
+                   group="Thresholds", tooltip="Score above this triggers high volatility signal")
+lowVolThreshold = input.float(30.0, title="Low Volatility Threshold", minval=0.0, maxval=50.0, 
+                   group="Thresholds", tooltip="Score below this triggers low volatility signal")
+
+// Display Settings
+showTable = input.bool(true, title="Show Info Table", group="Display")
+showSignals = input.bool(true, title="Show Signals", group="Display")
+showBackground = input.bool(true, title="Show Background Color", group="Display")
+
+// Alert Settings
+enableAlerts = input.bool(true, title="Enable Alerts", group="Alerts")
+
+// ════════════════════════════════════════════════════════════════════════
+// VOLATILITY COMPONENT CALCULATIONS
+// ════════════════════════════════════════════════════════════════════════
+
+// ATR Component - Normalized to 0-100 scale
+atrValue = ta.atr(atrLength)
+atrPercentOfPrice = (atrValue / close) * 100
+// Use adaptive normalization based on recent history
+atrMax = ta.highest(atrPercentOfPrice, 100)
+atrMin = ta.lowest(atrPercentOfPrice, 100)
+atrNormalized = atrMax > atrMin ? ((atrPercentOfPrice - atrMin) / (atrMax - atrMin)) * 100 : 50.0
+
+// Bollinger Bands Component - Width as volatility measure
+bbBasis = ta.sma(close, bbLength)
+bbDev = bbMult * ta.stdev(close, bbLength)
+bbUpper = bbBasis + bbDev
+bbLower = bbBasis - bbDev
+bbWidthValue = ((bbUpper - bbLower) / bbBasis) * 100
+// Normalize BB width
+bbWidthMax = ta.highest(bbWidthValue, 100)
+bbWidthMin = ta.lowest(bbWidthValue, 100)
+bbWidthNormalized = bbWidthMax > bbWidthMin ? ((bbWidthValue - bbWidthMin) / (bbWidthMax - bbWidthMin)) * 100 : 50.0
+
+// Standard Deviation Component - Normalized
+stdDev = ta.stdev(close, stdDevLength)
+stdDevPercent = (stdDev / close) * 100
+// Normalize standard deviation
+stdDevMax = ta.highest(stdDevPercent, 100)
+stdDevMin = ta.lowest(stdDevPercent, 100)
+stdDevNormalized = stdDevMax > stdDevMin ? ((stdDevPercent - stdDevMin) / (stdDevMax - stdDevMin)) * 100 : 50.0
+
+// ════════════════════════════════════════════════════════════════════════
+// COMPOSITE VOLATILITY SCORE WITH ADAPTIVE WEIGHTING
+// ════════════════════════════════════════════════════════════════════════
+
+// Normalize weights to sum to 1.0
+totalWeight = atrWeight + bbWidth + stdDevWeight
+normalizedATRWeight = totalWeight > 0 ? atrWeight / totalWeight : 0.33
+normalizedBBWeight = totalWeight > 0 ? bbWidth / totalWeight : 0.33
+normalizedStdDevWeight = totalWeight > 0 ? stdDevWeight / totalWeight : 0.34
+
+// Calculate composite volatility score
+volatilityScore = (atrNormalized * normalizedATRWeight) + 
+                  (bbWidthNormalized * normalizedBBWeight) + 
+                  (stdDevNormalized * normalizedStdDevWeight)
+
+// Smooth the score to reduce noise
+smoothedScore = ta.sma(volatilityScore, 3)
+
+// ════════════════════════════════════════════════════════════════════════
+// SIGNAL GENERATION (Non-Redundant)
+// ════════════════════════════════════════════════════════════════════════
+
+// Track previous state to avoid redundant signals
+var bool wasHighVol = false
+var bool wasLowVol = false
+
+isHighVol = smoothedScore > highVolThreshold
+isLowVol = smoothedScore < lowVolThreshold
+
+// Generate signals only on state change (non-redundant)
+highVolSignal = showSignals and isHighVol and not wasHighVol
+lowVolSignal = showSignals and isLowVol and not wasLowVol
+
+// Update state
+wasHighVol := isHighVol
+wasLowVol := isLowVol
+
+// ════════════════════════════════════════════════════════════════════════
+// PLOTTING
+// ════════════════════════════════════════════════════════════════════════
+
+// Plot main volatility score
+plot(smoothedScore, title="Volatility Score", color=color.new(color.blue, 0), linewidth=2)
+
+// Plot threshold lines
+hline(highVolThreshold, title="High Vol Threshold", color=color.new(color.red, 50), linestyle=hline.style_dashed)
+hline(lowVolThreshold, title="Low Vol Threshold", color=color.new(color.green, 50), linestyle=hline.style_dashed)
+hline(50, title="Midline", color=color.new(color.gray, 70), linestyle=hline.style_dotted)
+
+// Plot component scores for reference (lighter colors)
+plot(atrNormalized, title="ATR Component", color=color.new(color.orange, 70), linewidth=1)
+plot(bbWidthNormalized, title="BB Component", color=color.new(color.purple, 70), linewidth=1)
+plot(stdDevNormalized, title="StdDev Component", color=color.new(color.teal, 70), linewidth=1)
+
+// Plot signals (shapes) - only on state change
+plotshape(highVolSignal, style=shape.triangleup, location=location.bottom, 
+          color=color.new(color.red, 0), size=size.small, title="High Vol Signal")
+plotshape(lowVolSignal, style=shape.triangledown, location=location.top, 
+          color=color.new(color.green, 0), size=size.small, title="Low Vol Signal")
+
+// Background coloring (non-redundant, based on volatility level)
+bgColor = showBackground ? 
+          (smoothedScore > highVolThreshold ? color.new(color.red, 90) : 
+           smoothedScore < lowVolThreshold ? color.new(color.green, 90) : 
+           color.new(color.gray, 95)) : na
+bgcolor(bgColor, title="Volatility Background")
+
+// ════════════════════════════════════════════════════════════════════════
+// STREAMLINED INFO TABLE
+// ════════════════════════════════════════════════════════════════════════
+
+if showTable
+    var table infoTable = table.new(position.top_right, 2, 7, 
+                          border_width=1, border_color=color.gray, frame_width=1, frame_color=color.gray)
+    
+    // Header
+    if barstate.isfirst
+        table.cell(infoTable, 0, 0, "Metric", text_color=color.white, bgcolor=color.new(color.gray, 30))
+        table.cell(infoTable, 1, 0, "Value", text_color=color.white, bgcolor=color.new(color.gray, 30))
+    
+    // Update values on last bar only
+    if barstate.islast
+        // Volatility Score
+        scoreColor = smoothedScore > highVolThreshold ? color.red : 
+                     smoothedScore < lowVolThreshold ? color.green : color.orange
+        table.cell(infoTable, 0, 1, "Vol Score", text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 1, str.tostring(smoothedScore, "#.##"), 
+                   text_color=color.white, bgcolor=color.new(scoreColor, 50))
+        
+        // ATR Component
+        table.cell(infoTable, 0, 2, "ATR (" + str.tostring(normalizedATRWeight * 100, "#") + "%)", 
+                   text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 2, str.tostring(atrNormalized, "#.##"), 
+                   text_color=color.white, bgcolor=color.new(color.orange, 70))
+        
+        // BB Component
+        table.cell(infoTable, 0, 3, "BB (" + str.tostring(normalizedBBWeight * 100, "#") + "%)", 
+                   text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 3, str.tostring(bbWidthNormalized, "#.##"), 
+                   text_color=color.white, bgcolor=color.new(color.purple, 70))
+        
+        // StdDev Component
+        table.cell(infoTable, 0, 4, "StdDev (" + str.tostring(normalizedStdDevWeight * 100, "#") + "%)", 
+                   text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 4, str.tostring(stdDevNormalized, "#.##"), 
+                   text_color=color.white, bgcolor=color.new(color.teal, 70))
+        
+        // Volatility State
+        volState = smoothedScore > highVolThreshold ? "HIGH" : 
+                   smoothedScore < lowVolThreshold ? "LOW" : "NORMAL"
+        stateColor = smoothedScore > highVolThreshold ? color.red : 
+                     smoothedScore < lowVolThreshold ? color.green : color.orange
+        table.cell(infoTable, 0, 5, "State", text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 5, volState, text_color=color.white, bgcolor=color.new(stateColor, 50))
+        
+        // Trend indicator (rising/falling volatility)
+        volTrend = smoothedScore > smoothedScore[1] ? "↑" : 
+                   smoothedScore < smoothedScore[1] ? "↓" : "→"
+        table.cell(infoTable, 0, 6, "Trend", text_color=color.white, bgcolor=color.new(color.gray, 70))
+        table.cell(infoTable, 1, 6, volTrend, text_color=color.white, bgcolor=color.new(color.gray, 50))
+
+// ════════════════════════════════════════════════════════════════════════
+// ALERTS (Actionable, Non-Redundant)
+// ════════════════════════════════════════════════════════════════════════
+
+// High volatility alert (only when entering high volatility state)
+alertcondition(enableAlerts and highVolSignal, 
+               title="High Volatility Alert", 
+               message="Volatility Score: HIGH volatility detected (Score: {{plot_0}})")
+
+// Low volatility alert (only when entering low volatility state)
+alertcondition(enableAlerts and lowVolSignal, 
+               title="Low Volatility Alert", 
+               message="Volatility Score: LOW volatility detected (Score: {{plot_0}})")
+
+// Extreme volatility spike alert
+extremeSpikeUp = smoothedScore > smoothedScore[1] + 10 and smoothedScore > 75
+alertcondition(enableAlerts and extremeSpikeUp, 
+               title="Extreme Volatility Spike", 
+               message="Volatility Score: EXTREME spike detected (Score: {{plot_0}})")
