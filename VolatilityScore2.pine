@@ -8,7 +8,7 @@ indicator("Volatility Score v2", shorttitle="VolScore2", overlay=false, timefram
 // Component Weights (adaptive tuning)
 atrWeight = input.float(0.40, title="ATR Weight", minval=0.0, maxval=1.0, step=0.05, 
             group="Component Weights", tooltip="Weight for ATR component in volatility score")
-bbWidth = input.float(0.35, title="Bollinger Bands Weight", minval=0.0, maxval=1.0, step=0.05, 
+bbWeight = input.float(0.35, title="Bollinger Bands Weight", minval=0.0, maxval=1.0, step=0.05, 
             group="Component Weights", tooltip="Weight for Bollinger Bands width component")
 stdDevWeight = input.float(0.25, title="Std Dev Weight", minval=0.0, maxval=1.0, step=0.05, 
             group="Component Weights", tooltip="Weight for standard deviation component")
@@ -73,9 +73,9 @@ stdDevNormalized = stdDevMax > stdDevMin ? ((stdDevPercent - stdDevMin) / (stdDe
 // ════════════════════════════════════════════════════════════════════════
 
 // Normalize weights to sum to 1.0
-totalWeight = atrWeight + bbWidth + stdDevWeight
+totalWeight = atrWeight + bbWeight + stdDevWeight
 normalizedATRWeight = totalWeight > 0 ? atrWeight / totalWeight : 0.33
-normalizedBBWeight = totalWeight > 0 ? bbWidth / totalWeight : 0.33
+normalizedBBWeight = totalWeight > 0 ? bbWeight / totalWeight : 0.33
 normalizedStdDevWeight = totalWeight > 0 ? stdDevWeight / totalWeight : 0.34
 
 // Calculate composite volatility score
