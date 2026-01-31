@@ -9,23 +9,36 @@ A comprehensive multi-indicator trading signal system that combines RSI, EMA cro
 ### Features
 
 #### Multiple Technical Indicators
-- **RSI (Relative Strength Index)**: Identifies overbought/oversold conditions
-- **EMA Crossovers**: Fast (9) and Slow (21) EMAs for trend identification
-- **Bollinger Bands**: Dynamic support/resistance levels based on volatility
-- **ATR (Average True Range)**: Measures market volatility
-- **Volume Analysis**: Filters signals based on trading volume
+- **RSI (Relative Strength Index)**: Identifies overbought/oversold conditions with neutral zones
+- **EMA Crossovers**: Fast (9) and Slow (21) EMAs for trend identification and crossover signals
+- **Bollinger Bands**: Dynamic support/resistance levels with rebound detection
+- **ATR (Average True Range)**: Measures market volatility and calculates risk-adjusted levels
+- **Volume Analysis**: Filters signals based on trading volume with trend detection
 
-#### Signal Generation
-- **Buy Signals**: Generated when multiple bullish conditions align
-- **Sell Signals**: Generated when multiple bearish conditions align
+#### Advanced Signal Generation
+- **Multi-Condition Buy Signals**: Three different buy conditions that can trigger signals:
+  1. EMA bullish crossover with RSI confirmation
+  2. Bollinger Band lower rebound with bullish trend
+  3. Triple confirmation (RSI + EMA + BB) with volume
+- **Multi-Condition Sell Signals**: Three different sell conditions:
+  1. EMA bearish crossover with RSI confirmation
+  2. Bollinger Band upper rebound with bearish trend
+  3. Triple confirmation (RSI + EMA + BB) with volume
+- **Signal Strength Indicator**: 0-4 scale showing the number of confirming indicators
+- **Signal Spam Prevention**: Configurable minimum gap between signals to reduce noise
 - **Configurable Filters**: Enable/disable individual indicators for signal generation
-- **Visual Indicators**: Clear buy/sell labels on the chart
+
+#### Risk Management
+- **ATR-Based Stop Loss**: Automatic stop loss calculation using volatility
+- **ATR-Based Take Profit**: 2:1 reward-risk ratio take profit levels
+- **Visual Price Levels**: Optional display of stop loss and take profit on chart
 
 #### User Interface
 - **Organized Input Groups**: All parameters organized by category
-- **Real-time Info Table**: Displays current values of all indicators
+- **Real-time Info Table**: Displays current values of all indicators plus signal strength
 - **Color-coded Feedback**: Visual representation of market conditions
 - **Trend Background**: Chart background changes based on EMA trend
+- **Clear Visual Signals**: Buy/Sell labels with color coding
 
 #### Alert System
 - Buy Signal Alerts
@@ -68,13 +81,21 @@ A comprehensive multi-indicator trading signal system that combines RSI, EMA cro
 - **Enable EMA Signals**: Include EMA crossovers in signal generation
 - **Enable BB Signals**: Include Bollinger Bands in signal generation
 - **Enable Volume Filter**: Filter signals by volume threshold
+- **Min Bars Between Signals**: Minimum gap between signals to reduce noise (default: 5)
+
+#### Display Settings
+- **Show Stop Loss/Take Profit**: Display ATR-based risk management levels
+- **Show Signal Strength**: Display real-time signal strength in info table
 
 ### Performance Optimizations
 
 - **Efficient Calculations**: Uses Pine Script's built-in ta.* functions for optimal performance
 - **Limited Lookback**: max_bars_back set to 500 for memory efficiency
-- **Conditional Plotting**: Table updates only on the last bar
+- **Conditional Plotting**: Table updates only on the last bar to minimize CPU usage
 - **Minimal Repainting**: Signal logic designed to minimize repainting issues
+- **Smart Signal Filtering**: Prevents signal spam with configurable gap between signals
+- **Optimized Indicator Combinations**: Multiple signal conditions reduce false positives
+- **Variable Management**: Proper use of var keyword for efficient state management
 
 ### Best Practices
 
@@ -101,6 +122,18 @@ The script is highly customizable. You can:
 - Customize alert messages
 
 ### Changelog
+
+#### Version 1.1.0 (Latest)
+- Enhanced signal logic with three different buy/sell conditions
+- Added signal strength indicator (0-4 scale)
+- Added minimum gap between signals to prevent spam
+- Added ATR-based stop loss and take profit levels with 2:1 reward-risk ratio
+- Improved volume analysis with volume increase detection
+- Added Bollinger Band rebound detection
+- Added neutral RSI zones for better signal filtering
+- Improved trend detection with price action analysis
+- Enhanced info table with signal strength display
+- Better risk management features
 
 #### Version 1.0.0 (Initial Release)
 - Complete implementation of multi-indicator signal system
