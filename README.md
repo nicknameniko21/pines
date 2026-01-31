@@ -1,56 +1,21 @@
 # Pines - TradingView Pine Scripts
 
-A collection of professional Pine Script indicators for TradingView, optimized for live trading use.
+A collection of professional Pine Script indicators for TradingView.
 
-## Scripts
-
-### 1. TradingAlerts_All.pine
-
-A comprehensive trading signals script that generates high-quality buy/sell alerts by combining multiple technical indicators with weighted scoring.
-
-#### Features
-
-**Multi-Indicator Analysis**
-- **RSI (Relative Strength Index)**: Identifies overbought/oversold conditions
-- **EMA (Exponential Moving Averages)**: Analyzes trend direction and crossovers (fast, slow, and trend EMAs)
-- **Volume Analysis**: Confirms price movements with volume spikes
-- **Price Action**: Evaluates candle patterns and breakouts
-
-**Intelligent Scoring System**
-- Each component contributes a weighted score (bullish or bearish)
-- Configurable weights allow customization based on trading style
-- Aggregated total score determines signal strength
-- Prevents signal repetition and reduces noise
-
-**Visual Elements**
-- **EMA Lines**: Fast (9), Slow (21), and Trend (50) EMAs plotted on chart
-- **Background Colors**: Green for bullish conditions, red for bearish
-- **Signal Markers**: Clear BUY/SELL labels at entry points
-- **Score Table**: Real-time display of all component scores and total
-
-**Alerts**
-- Configurable buy/sell alerts with detailed score breakdown
-- One alert per bar to prevent spam
-- Includes all component scores in alert message
-
-See [EXAMPLES.md](EXAMPLES.md) for configuration examples and [SUMMARY.md](SUMMARY.md) for implementation details.
-
----
-
-### 2. VolatilitySignals.pine
+## VolatilitySignals.pine
 
 A comprehensive multi-indicator trading signal system that combines RSI, EMA crossovers, Bollinger Bands, ATR, and volume analysis to generate accurate buy/sell signals.
 
-#### Features
+### Features
 
-**Multiple Technical Indicators**
+#### Multiple Technical Indicators
 - **RSI (Relative Strength Index)**: Identifies overbought/oversold conditions with neutral zones
 - **EMA Crossovers**: Fast (9) and Slow (21) EMAs for trend identification and crossover signals
 - **Bollinger Bands**: Dynamic support/resistance levels with rebound detection
 - **ATR (Average True Range)**: Measures market volatility and calculates risk-adjusted levels
 - **Volume Analysis**: Filters signals based on trading volume with trend detection
 
-**Advanced Signal Generation**
+#### Advanced Signal Generation
 - **Multi-Condition Buy Signals**: Three different buy conditions that can trigger signals:
   1. EMA bullish crossover with RSI confirmation
   2. Bollinger Band lower rebound with bullish trend
@@ -63,58 +28,121 @@ A comprehensive multi-indicator trading signal system that combines RSI, EMA cro
 - **Signal Spam Prevention**: Configurable minimum gap between signals to reduce noise
 - **Configurable Filters**: Enable/disable individual indicators for signal generation
 
-**Risk Management**
+#### Risk Management
 - **ATR-Based Stop Loss**: Automatic stop loss calculation using volatility
 - **ATR-Based Take Profit**: 2:1 reward-risk ratio take profit levels
 - **Visual Price Levels**: Optional display of stop loss and take profit on chart
 
-**User Interface**
+#### User Interface
 - **Organized Input Groups**: All parameters organized by category
 - **Real-time Info Table**: Displays current values of all indicators plus signal strength
 - **Color-coded Feedback**: Visual representation of market conditions
 - **Trend Background**: Chart background changes based on EMA trend
 - **Clear Visual Signals**: Buy/Sell labels with color coding
 
-**Alert System**
+#### Alert System
 - Buy Signal Alerts
 - Sell Signal Alerts
 - Bullish/Bearish EMA Cross Alerts
 
-See [USAGE_GUIDE.md](USAGE_GUIDE.md) for detailed usage instructions.
-
----
-
-## General Usage
+### Usage
 
 1. Open TradingView and navigate to Pine Editor
-2. Copy the contents of your chosen Pine script
+2. Copy the contents of `VolatilitySignals.pine`
 3. Paste into Pine Editor
 4. Click "Add to Chart"
 5. Configure parameters in the indicator settings
 
-## Best Practices
+### Parameters
 
-- **Backtesting**: Test settings on historical data before live trading
-- **Confirmation**: Use additional analysis to confirm signals
-- **Risk Management**: Always use stop losses and position sizing
-- **Asset Tuning**: Different assets may require different settings
-- **Timeframe**: Higher timeframes (4H, Daily) typically produce more reliable signals
+#### RSI Settings
+- **RSI Length**: Period for RSI calculation (default: 14)
+- **RSI Overbought**: Upper threshold for overbought condition (default: 70)
+- **RSI Oversold**: Lower threshold for oversold condition (default: 30)
 
-## Documentation
+#### EMA Settings
+- **Fast EMA Length**: Period for fast EMA (default: 9)
+- **Slow EMA Length**: Period for slow EMA (default: 21)
 
-- **TradingAlerts_All.pine**:
-  - [EXAMPLES.md](EXAMPLES.md) - Configuration examples for different trading styles
-  - [SUMMARY.md](SUMMARY.md) - Complete implementation details
-  - [VALIDATION_TradingAlerts.md](VALIDATION_TradingAlerts.md) - Testing and validation guide
+#### Bollinger Bands
+- **BB Length**: Period for BB calculation (default: 20)
+- **BB Multiplier**: Standard deviation multiplier (default: 2.0)
 
-- **VolatilitySignals.pine**:
-  - [USAGE_GUIDE.md](USAGE_GUIDE.md) - Detailed usage instructions
-  - [VALIDATION_VolatilitySignals.md](VALIDATION_VolatilitySignals.md) - Validation report
+#### ATR Settings
+- **ATR Length**: Period for ATR calculation (default: 14)
+- **ATR Multiplier**: Multiplier for volatility threshold (default: 1.5)
 
-## License
+#### Volume Settings
+- **Volume MA Length**: Period for volume moving average (default: 20)
+- **Volume Threshold Multiplier**: Multiplier for high volume detection (default: 1.5)
 
-Mozilla Public License 2.0
+#### Signal Filters
+- **Enable RSI Signals**: Include RSI in signal generation
+- **Enable EMA Signals**: Include EMA crossovers in signal generation
+- **Enable BB Signals**: Include Bollinger Bands in signal generation
+- **Enable Volume Filter**: Filter signals by volume threshold
+- **Min Bars Between Signals**: Minimum gap between signals to reduce noise (default: 5)
 
----
+#### Display Settings
+- **Show Stop Loss/Take Profit**: Display ATR-based risk management levels
+- **Show Signal Strength**: Display real-time signal strength in info table
 
-**Note**: These indicators are for educational and informational purposes. Always practice proper risk management and never risk more than you can afford to lose.
+### Performance Optimizations
+
+- **Efficient Calculations**: Uses Pine Script's built-in ta.* functions for optimal performance
+- **Limited Lookback**: max_bars_back set to 500 for memory efficiency
+- **Conditional Plotting**: Table updates only on the last bar to minimize CPU usage
+- **Minimal Repainting**: Signal logic designed to minimize repainting issues
+- **Smart Signal Filtering**: Prevents signal spam with configurable gap between signals
+- **Optimized Indicator Combinations**: Multiple signal conditions reduce false positives
+- **Variable Management**: Proper use of var keyword for efficient state management
+
+### Best Practices
+
+1. **Backtesting**: Always backtest the strategy on historical data before live trading
+2. **Risk Management**: Use proper stop-loss and position sizing
+3. **Multiple Timeframes**: Check signals across different timeframes for confirmation
+4. **Market Conditions**: Adjust parameters based on market volatility and asset characteristics
+5. **Combine with Other Tools**: Use in conjunction with other analysis methods
+
+### Technical Details
+
+- **Pine Script Version**: 5
+- **Overlay**: True (plots on the main price chart)
+- **Indicator Type**: Technical Analysis Signal Generator
+- **Update Frequency**: Real-time on each bar close
+
+### Customization
+
+The script is highly customizable. You can:
+- Adjust all indicator parameters to match your trading style
+- Enable/disable individual signal components
+- Modify colors and visual elements
+- Add additional indicators or filters
+- Customize alert messages
+
+### Changelog
+
+#### Version 1.0.0 (Initial Release)
+- Complete multi-indicator signal system with RSI, EMA, Bollinger Bands, ATR, and Volume analysis
+- Enhanced signal logic with three different buy/sell conditions for each direction
+- Signal strength indicator (0-4 scale) for signal quality assessment
+- Minimum gap between signals to prevent spam and reduce noise
+- ATR-based stop loss and take profit levels with 2:1 reward-risk ratio
+- Advanced volume analysis with volume increase detection
+- Bollinger Band rebound detection for mean reversion opportunities
+- Neutral RSI zones for better signal filtering and trend confirmation
+- Price action analysis with EMA trend detection
+- Real-time information table with signal strength display
+- Comprehensive risk management features
+- Configurable signal filters for customization
+- Performance optimizations for efficient execution
+- Comprehensive alert system for all signal types
+
+### License
+
+This project is provided as-is for educational and trading purposes.
+
+### Support
+
+For issues, improvements, or questions, please open an issue in the repository.
