@@ -258,7 +258,7 @@ if barstate.islast
     table.cell(infoTable, 1, 5, str.tostring(volumeDelta, format.volume), text_color=deltaColor)
     
     table.cell(infoTable, 0, 6, "Delta Trend:", text_color=color.white)
-    deltaTrend = volumeDelta > deltaMA ? "Buying ↑" : "Selling ↓"
+    deltaTrend = volumeDelta > deltaMA ? "Buying" : "Selling"
     table.cell(infoTable, 1, 6, deltaTrend, text_color=volumeDelta > deltaMA ? color.green : color.red)
     
     table.cell(infoTable, 0, 7, "Profile Bars:", text_color=color.white)

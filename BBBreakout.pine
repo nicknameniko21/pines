@@ -240,7 +240,7 @@ if barstate.islast
     table.cell(infoTable, 1, 2, str.tostring(bandwidthPercentile, "#.#") + "%", text_color=color.gray)
     
     table.cell(infoTable, 0, 3, "Squeeze:", text_color=color.white)
-    squeezeText = inSqueeze ? "YES (!)": "No"
+    squeezeText = inSqueeze ? "YES (!)" : "No"
     table.cell(infoTable, 1, 3, squeezeText, text_color=inSqueeze ? color.orange : color.gray)
     
     table.cell(infoTable, 0, 4, "%B Position:", text_color=color.white)
@@ -248,10 +248,10 @@ if barstate.islast
     table.cell(infoTable, 1, 4, str.tostring(percentB, "#.##"), text_color=pbColor)
     
     table.cell(infoTable, 0, 5, "Volume:", text_color=color.white)
-    volumeText = highVolume ? "HIGH ▲" : "Normal"
+    volumeText = highVolume ? "HIGH" : "Normal"
     table.cell(infoTable, 1, 5, volumeText, text_color=highVolume ? color.green : color.gray)
     
     table.cell(infoTable, 0, 6, "Trend:", text_color=color.white)
-    trendText = trend > 0 ? "Bullish ↑" : trend < 0 ? "Bearish ↓" : "Neutral →"
+    trendText = trend > 0 ? "Bullish" : trend < 0 ? "Bearish" : "Neutral"
     trendColor = trend > 0 ? color.green : trend < 0 ? color.red : color.gray
     table.cell(infoTable, 1, 6, trendText, text_color=trendColor)
