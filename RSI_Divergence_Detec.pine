@@ -1,0 +1,292 @@
+//@version=5
+indicator("RSI Divergence Detector - Enhanced", overlay=true, max_labels_count=50, max_lines_count=50)
+
+// ==================== DOCUMENTATION ====================
+// This script detects RSI divergences using a non-repainting methodology
+// Key Features:
+// - Anti-repainting: Uses confirmed pivots only
+// - Regular & Hidden divergences
+// - Visual clarity: Clean charts with optional table display
+// - Configurable alerts
+// - Optimized for performance with var declarations
+
+// ==================== INPUT PARAMETERS ====================
+// RSI Settings
+rsiLength = input.int(14, "RSI Length", minval=1, group="RSI Settings", 
+     tooltip="Period for RSI calculation. Default is 14.")
+rsiOverbought = input.int(70, "RSI Overbought", minval=50, maxval=100, group="RSI Settings", 
+     tooltip="RSI level considered overbought.")
+rsiOversold = input.int(30, "RSI Oversold", minval=0, maxval=50, group="RSI Settings", 
+     tooltip="RSI level considered oversold.")
+
+// Pivot Settings
+pivotLookback = input.int(5, "Pivot Lookback", minval=2, maxval=21, group="Pivot Settings", 
+     tooltip="Number of bars to left and right for pivot confirmation. Higher values = more reliable but slower signals.")
+
+// Divergence Type Settings
+showRegularDiv = input.bool(true, "Show Regular Divergence", group="Divergence Settings", 
+     tooltip="Regular divergence: trend reversal signals")
+showHiddenDiv = input.bool(false, "Show Hidden Divergence", group="Divergence Settings", 
+     tooltip="Hidden divergence: trend continuation signals")
+
+// Visual Settings
+showBullishDiv = input.bool(true, "Show Bullish Signals", group="Visual Settings")
+showBearishDiv = input.bool(true, "Show Bearish Signals", group="Visual Settings")
+showDivLines = input.bool(true, "Show Divergence Lines", group="Visual Settings")
+showTable = input.bool(true, "Show Signal Table", group="Visual Settings")
+showRSIPane = input.bool(true, "Show RSI Pane", group="Visual Settings")
+bullColor = input.color(color.new(color.green, 0), "Bullish Color", group="Visual Settings")
+bearColor = input.color(color.new(color.red, 0), "Bearish Color", group="Visual Settings")
+hiddenBullColor = input.color(color.new(color.green, 50), "Hidden Bullish Color", group="Visual Settings")
+hiddenBearColor = input.color(color.new(color.red, 50), "Hidden Bearish Color", group="Visual Settings")
+
+// Alert Settings
+enableAlerts = input.bool(true, "Enable Alerts", group="Alert Settings")
+alertOnRegular = input.bool(true, "Alert on Regular Divergence", group="Alert Settings")
+alertOnHidden = input.bool(false, "Alert on Hidden Divergence", group="Alert Settings")
+
+// ==================== RSI CALCULATION ====================
+rsi = ta.rsi(close, rsiLength)
+
+// ==================== PIVOT DETECTION ====================
+// Detect pivots - these are confirmed after lookback bars have passed
+pivotHigh = ta.pivothigh(rsi, pivotLookback, pivotLookback)
+pivotLow = ta.pivotlow(rsi, pivotLookback, pivotLookback)
+
+// Price at pivot points (offset by lookback to get actual pivot bar price)
+pricePivotHigh = ta.pivothigh(high, pivotLookback, pivotLookback)
+pricePivotLow = ta.pivotlow(low, pivotLookback, pivotLookback)
+
+// ==================== DIVERGENCE DETECTION STATE ====================
+// Use var to maintain state across bars efficiently
+var float prevHighPrice = na
+var float prevHighRSI = na
+var int prevHighBar = na
+
+var float prevLowPrice = na
+var float prevLowRSI = na
+var int prevLowBar = na
+
+// Track current divergences
+var bool bullishDivDetected = false
+var bool bearishDivDetected = false
+var bool hiddenBullishDivDetected = false
+var bool hiddenBearishDivDetected = false
+
+// Count divergences for table
+var int totalBullDiv = 0
+var int totalBearDiv = 0
+
+// Temporary variables for current pivot values (reused per bar)
+float currentHighPrice = na
+float currentHighRSI = na
+int currentHighBar = na
+float currentLowPrice = na
+float currentLowRSI = na
+int currentLowBar = na
+
+// ==================== BEARISH DIVERGENCE LOGIC ====================
+// Regular Bearish Divergence: Price makes higher high, RSI makes lower high (trend reversal)
+// Hidden Bearish Divergence: Price makes lower high, RSI makes higher high (trend continuation)
+if not na(pivotHigh) and not na(pricePivotHigh)
+    currentHighPrice := high[pivotLookback]
+    currentHighRSI := rsi[pivotLookback]
+    currentHighBar := bar_index - pivotLookback
+    
+    bearishDivDetected := false
+    hiddenBearishDivDetected := false
+    
+    // Check if we have a previous high to compare with
+    if not na(prevHighPrice) and not na(prevHighRSI)
+        // Regular Bearish Divergence: Price HH, RSI LH
+        if showRegularDiv and currentHighPrice > prevHighPrice and currentHighRSI < prevHighRSI
+            bearishDivDetected := true
+            totalBearDiv += 1
+            
+            if showBearishDiv
+                // Draw divergence line on RSI
+                if showDivLines and showRSIPane
+                    line.new(prevHighBar, prevHighRSI, currentHighBar, currentHighRSI, 
+                         color=bearColor, width=2, style=line.style_solid)
+                
+                // Mark divergence on price chart
+                label.new(currentHighBar, currentHighPrice, "⊗ Bear", 
+                     style=label.style_label_down, color=bearColor, 
+                     textcolor=color.white, size=size.small, 
+                     tooltip="Regular Bearish Divergence\nPrice: HH\nRSI: LH")
+            
+            // Alert
+            if enableAlerts and alertOnRegular
+                alert("🔴 Regular Bearish Divergence detected\nPrice: " + str.tostring(currentHighPrice) + 
+                     "\nRSI: " + str.tostring(math.round(currentHighRSI, 2)), alert.freq_once_per_bar_close)
+        
+        // Hidden Bearish Divergence: Price LH, RSI HH (trend continuation)
+        if showHiddenDiv and currentHighPrice < prevHighPrice and currentHighRSI > prevHighRSI
+            hiddenBearishDivDetected := true
+            
+            if showBearishDiv
+                // Draw hidden divergence line on RSI
+                if showDivLines and showRSIPane
+                    line.new(prevHighBar, prevHighRSI, currentHighBar, currentHighRSI, 
+                         color=hiddenBearColor, width=2, style=line.style_dashed)
+                
+                // Mark hidden divergence on price chart
+                label.new(currentHighBar, currentHighPrice, "H-Bear", 
+                     style=label.style_label_down, color=hiddenBearColor, 
+                     textcolor=color.white, size=size.tiny, 
+                     tooltip="Hidden Bearish Divergence\nPrice: LH\nRSI: HH\n(Trend Continuation)")
+            
+            // Alert
+            if enableAlerts and alertOnHidden
+                alert("🟠 Hidden Bearish Divergence detected\nPrice: " + str.tostring(currentHighPrice), 
+                     alert.freq_once_per_bar_close)
+    
+    // Update previous high values
+    prevHighPrice := currentHighPrice
+    prevHighRSI := currentHighRSI
+    prevHighBar := currentHighBar
+else
+    bearishDivDetected := false
+    hiddenBearishDivDetected := false
+
+// ==================== BULLISH DIVERGENCE LOGIC ====================
+// Regular Bullish Divergence: Price makes lower low, RSI makes higher low (trend reversal)
+// Hidden Bullish Divergence: Price makes higher low, RSI makes lower low (trend continuation)
+if not na(pivotLow) and not na(pricePivotLow)
+    currentLowPrice := low[pivotLookback]
+    currentLowRSI := rsi[pivotLookback]
+    currentLowBar := bar_index - pivotLookback
+    
+    bullishDivDetected := false
+    hiddenBullishDivDetected := false
+    
+    // Check if we have a previous low to compare with
+    if not na(prevLowPrice) and not na(prevLowRSI)
+        // Regular Bullish Divergence: Price LL, RSI HL
+        if showRegularDiv and currentLowPrice < prevLowPrice and currentLowRSI > prevLowRSI
+            bullishDivDetected := true
+            totalBullDiv += 1
+            
+            if showBullishDiv
+                // Draw divergence line on RSI
+                if showDivLines and showRSIPane
+                    line.new(prevLowBar, prevLowRSI, currentLowBar, currentLowRSI, 
+                         color=bullColor, width=2, style=line.style_solid)
+                
+                // Mark divergence on price chart
+                label.new(currentLowBar, currentLowPrice, "⊕ Bull", 
+                     style=label.style_label_up, color=bullColor, 
+                     textcolor=color.white, size=size.small, 
+                     tooltip="Regular Bullish Divergence\nPrice: LL\nRSI: HL")
+            
+            // Alert
+            if enableAlerts and alertOnRegular
+                alert("🟢 Regular Bullish Divergence detected\nPrice: " + str.tostring(currentLowPrice) + 
+                     "\nRSI: " + str.tostring(math.round(currentLowRSI, 2)), alert.freq_once_per_bar_close)
+        
+        // Hidden Bullish Divergence: Price HL, RSI LL (trend continuation)
+        if showHiddenDiv and currentLowPrice > prevLowPrice and currentLowRSI < prevLowRSI
+            hiddenBullishDivDetected := true
+            
+            if showBullishDiv
+                // Draw hidden divergence line on RSI
+                if showDivLines and showRSIPane
+                    line.new(prevLowBar, prevLowRSI, currentLowBar, currentLowRSI, 
+                         color=hiddenBullColor, width=2, style=line.style_dashed)
+                
+                // Mark hidden divergence on price chart
+                label.new(currentLowBar, currentLowPrice, "H-Bull", 
+                     style=label.style_label_up, color=hiddenBullColor, 
+                     textcolor=color.white, size=size.tiny, 
+                     tooltip="Hidden Bullish Divergence\nPrice: HL\nRSI: LL\n(Trend Continuation)")
+            
+            // Alert
+            if enableAlerts and alertOnHidden
+                alert("🟡 Hidden Bullish Divergence detected\nPrice: " + str.tostring(currentLowPrice), 
+                     alert.freq_once_per_bar_close)
+    
+    // Update previous low values
+    prevLowPrice := currentLowPrice
+    prevLowRSI := currentLowRSI
+    prevLowBar := currentLowBar
+else
+    bullishDivDetected := false
+    hiddenBullishDivDetected := false
+
+// ==================== SIGNAL TABLE ====================
+// Display a clean table showing current signals and RSI status
+if showTable
+    var table signalTable = table.new(position.top_right, 2, 5, 
+         border_width=1, border_color=color.new(color.gray, 50), 
+         frame_width=1, frame_color=color.new(color.gray, 50))
+    
+    // Header
+    if barstate.isfirst
+        table.cell(signalTable, 0, 0, "Metric", 
+             bgcolor=color.new(color.gray, 60), text_color=color.white, 
+             text_size=size.small, text_font_family=font.family_monospace)
+        table.cell(signalTable, 1, 0, "Status", 
+             bgcolor=color.new(color.gray, 60), text_color=color.white, 
+             text_size=size.small, text_font_family=font.family_monospace)
+    
+    // RSI Status
+    rsiStatus = rsi > rsiOverbought ? "Overbought" : rsi < rsiOversold ? "Oversold" : "Neutral"
+    rsiColor = rsi > rsiOverbought ? color.new(color.red, 80) : 
+               rsi < rsiOversold ? color.new(color.green, 80) : 
+               color.new(color.gray, 90)
+    table.cell(signalTable, 0, 1, "RSI (" + str.tostring(math.round(rsi, 2)) + ")", 
+         bgcolor=color.new(color.gray, 90), text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    table.cell(signalTable, 1, 1, rsiStatus, 
+         bgcolor=rsiColor, text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    
+    // Regular Bullish Divergence Status
+    bullStatus = bullishDivDetected ? "✓ ACTIVE" : "-"
+    bullBgColor = bullishDivDetected ? color.new(bullColor, 70) : color.new(color.gray, 90)
+    table.cell(signalTable, 0, 2, "Bull Div", 
+         bgcolor=color.new(color.gray, 90), text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    table.cell(signalTable, 1, 2, bullStatus, 
+         bgcolor=bullBgColor, text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    
+    // Regular Bearish Divergence Status
+    bearStatus = bearishDivDetected ? "✓ ACTIVE" : "-"
+    bearBgColor = bearishDivDetected ? color.new(bearColor, 70) : color.new(color.gray, 90)
+    table.cell(signalTable, 0, 3, "Bear Div", 
+         bgcolor=color.new(color.gray, 90), text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    table.cell(signalTable, 1, 3, bearStatus, 
+         bgcolor=bearBgColor, text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    
+    // Divergence Count
+    divCount = "Bull:" + str.tostring(totalBullDiv) + " / Bear:" + str.tostring(totalBearDiv)
+    table.cell(signalTable, 0, 4, "Total Count", 
+         bgcolor=color.new(color.gray, 90), text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+    table.cell(signalTable, 1, 4, divCount, 
+         bgcolor=color.new(color.gray, 90), text_color=color.white, 
+         text_size=size.tiny, text_font_family=font.family_monospace)
+
+// ==================== PLOT RSI ====================
+// Plot RSI in a separate pane for reference (only if enabled)
+if showRSIPane
+    hline(rsiOverbought, "Overbought", color=color.new(color.red, 50), linestyle=hline.style_dashed)
+    hline(rsiOversold, "Oversold", color=color.new(color.green, 50), linestyle=hline.style_dashed)
+    hline(50, "Midline", color=color.new(color.gray, 70), linestyle=hline.style_dotted)
+    
+    // Plot RSI with gradient coloring based on value
+    rsiColor = rsi > rsiOverbought ? color.new(color.red, 20) : 
+               rsi < rsiOversold ? color.new(color.green, 20) : 
+               color.new(color.blue, 30)
+    plot(rsi, "RSI", color=rsiColor, linewidth=2)
+    
+    // Highlight pivot points on RSI
+    plotshape(pivotHigh, "RSI High Pivot", 
+         location=location.absolute, style=shape.circle, 
+         color=color.new(color.red, 30), size=size.tiny)
+    plotshape(pivotLow, "RSI Low Pivot", 
+         location=location.absolute, style=shape.circle, 
+         color=color.new(color.green, 30), size=size.tiny)
