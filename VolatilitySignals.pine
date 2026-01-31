@@ -88,9 +88,9 @@ bbBearish = close > bbUpper
 bbBullishRebound = close[1] < bbLower and close > bbLower // Price rebounding from lower band
 bbBearishRebound = close[1] > bbUpper and close < bbUpper // Price rebounding from upper band
 
-// Calculate signal strength (0-4 scale)
-bullishStrength = (rsiBullish ? 1 : 0) + (emaTrendBullish ? 1 : 0) + (bbBullish ? 1 : 0) + (isHighVolume ? 1 : 0)
-bearishStrength = (rsiBearish ? 1 : 0) + (emaTrendBearish ? 1 : 0) + (bbBearish ? 1 : 0) + (isHighVolume ? 1 : 0)
+// Calculate signal strength (0-4 scale) - only count enabled indicators
+bullishStrength = (enableRSI and rsiBullish ? 1 : 0) + (enableEMA and emaTrendBullish ? 1 : 0) + (enableBB and bbBullish ? 1 : 0) + (enableVolume and isHighVolume ? 1 : 0)
+bearishStrength = (enableRSI and rsiBearish ? 1 : 0) + (enableEMA and emaTrendBearish ? 1 : 0) + (enableBB and bbBearish ? 1 : 0) + (enableVolume and isHighVolume ? 1 : 0)
 
 // Enhanced Buy Signal with multiple conditions
 buyCondition1 = emaBullishCross and (not enableRSI or rsiNeutralBullish or rsiBullish) and (not enableVolume or isHighVolume)

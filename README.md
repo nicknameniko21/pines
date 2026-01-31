@@ -123,25 +123,21 @@ The script is highly customizable. You can:
 
 ### Changelog
 
-#### Version 1.1.0 (Latest)
-- Enhanced signal logic with three different buy/sell conditions
-- Added signal strength indicator (0-4 scale)
-- Added minimum gap between signals to prevent spam
-- Added ATR-based stop loss and take profit levels with 2:1 reward-risk ratio
-- Improved volume analysis with volume increase detection
-- Added Bollinger Band rebound detection
-- Added neutral RSI zones for better signal filtering
-- Improved trend detection with price action analysis
-- Enhanced info table with signal strength display
-- Better risk management features
-
 #### Version 1.0.0 (Initial Release)
-- Complete implementation of multi-indicator signal system
-- RSI, EMA, Bollinger Bands, ATR, and Volume analysis
-- Configurable signal filters
-- Real-time information table
-- Comprehensive alert system
-- Performance optimizations
+- Complete multi-indicator signal system with RSI, EMA, Bollinger Bands, ATR, and Volume analysis
+- Enhanced signal logic with three different buy/sell conditions for each direction
+- Signal strength indicator (0-4 scale) for signal quality assessment
+- Minimum gap between signals to prevent spam and reduce noise
+- ATR-based stop loss and take profit levels with 2:1 reward-risk ratio
+- Advanced volume analysis with volume increase detection
+- Bollinger Band rebound detection for mean reversion opportunities
+- Neutral RSI zones for better signal filtering and trend confirmation
+- Price action analysis with EMA trend detection
+- Real-time information table with signal strength display
+- Comprehensive risk management features
+- Configurable signal filters for customization
+- Performance optimizations for efficient execution
+- Comprehensive alert system for all signal types
 
 ### License
 
