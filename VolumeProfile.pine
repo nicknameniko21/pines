@@ -1,0 +1,284 @@
+//@version=5
+indicator("Volume Profile Analysis", shorttitle="Vol Profile", overlay=true, max_bars_back=500)
+
+// ════════════════════════════════════════════════════════════════════════
+// INPUT PARAMETERS
+// ════════════════════════════════════════════════════════════════════════
+
+// Volume Profile Settings
+profileBars = input.int(100, title="Profile Lookback Bars", minval=20, maxval=500, group="Volume Profile", tooltip="Number of bars to analyze for volume profile")
+rowSize = input.int(20, title="Profile Rows", minval=10, maxval=50, group="Volume Profile", tooltip="Number of price levels to divide the profile into")
+
+// VWAP Settings
+vwapSource = input.source(hlc3, title="VWAP Source", group="VWAP Settings")
+vwapPeriod = input.string("Session", title="VWAP Period", options=["Session", "Week", "Month"], group="VWAP Settings")
+showVWAP = input.bool(true, title="Show VWAP", group="VWAP Settings")
+showVWAPBands = input.bool(true, title="Show VWAP Bands", group="VWAP Settings")
+vwapBandMult = input.float(1.5, title="VWAP Band Multiplier", minval=0.1, step=0.1, group="VWAP Settings")
+
+// Volume Analysis
+volumeMALength = input.int(20, title="Volume MA Length", minval=1, group="Volume Analysis")
+showVolumeNodes = input.bool(true, title="Show High/Low Volume Nodes", group="Volume Analysis")
+nodeThreshold = input.float(1.5, title="Volume Node Threshold", minval=1.0, step=0.1, group="Volume Analysis", tooltip="Multiplier for identifying significant volume nodes")
+
+// Volume Delta
+showDelta = input.bool(true, title="Show Volume Delta", group="Volume Delta", tooltip="Shows buying vs selling pressure")
+deltaMALength = input.int(14, title="Delta MA Length", minval=1, group="Volume Delta")
+
+// Display Settings
+profileTransparency = input.int(70, title="Profile Transparency", minval=0, maxval=100, group="Display")
+showPOC = input.bool(true, title="Show Point of Control (POC)", group="Display", tooltip="Shows price level with highest volume")
+showValueArea = input.bool(true, title="Show Value Area", group="Display", tooltip="Shows area containing 70% of volume")
+
+// ════════════════════════════════════════════════════════════════════════
+// VWAP CALCULATION
+// ════════════════════════════════════════════════════════════════════════
+
+// Determine reset condition based on period
+newPeriod = switch vwapPeriod
+    "Session" => ta.change(time("D"))
+    "Week" => ta.change(time("W"))
+    "Month" => ta.change(time("M"))
+
+// Calculate VWAP
+var float sumVP = 0.0
+var float sumV = 0.0
+
+if newPeriod
+    sumVP := 0.0
+    sumV := 0.0
+
+sumVP += vwapSource * volume
+sumV += volume
+
+vwap = sumVP / sumV
+
+// Calculate VWAP Standard Deviation
+var float sumSquares = 0.0
+
+if newPeriod
+    sumSquares := 0.0
+
+sumSquares += math.pow(vwapSource - vwap, 2) * volume
+vwapStdDev = math.sqrt(sumSquares / sumV)
+
+// VWAP Bands
+vwapUpper1 = vwap + (vwapStdDev * vwapBandMult)
+vwapLower1 = vwap - (vwapStdDev * vwapBandMult)
+vwapUpper2 = vwap + (vwapStdDev * vwapBandMult * 2)
+vwapLower2 = vwap - (vwapStdDev * vwapBandMult * 2)
+
+// ════════════════════════════════════════════════════════════════════════
+// VOLUME PROFILE CALCULATION
+// ════════════════════════════════════════════════════════════════════════
+
+// Get price range for lookback period
+var float maxPrice = high
+var float minPrice = low
+
+if bar_index < profileBars
+    maxPrice := high
+    minPrice := low
+else
+    maxPrice := ta.highest(high, profileBars)
+    minPrice := ta.lowest(low, profileBars)
+
+// Calculate price step for each row
+priceStep = (maxPrice - minPrice) / rowSize
+
+// Build volume profile
+var array<float> volumeProfile = array.new_float(rowSize, 0.0)
+var array<float> buyVolume = array.new_float(rowSize, 0.0)
+var array<float> sellVolume = array.new_float(rowSize, 0.0)
+
+// Reset profile array
+if bar_index % profileBars == 0
+    array.fill(volumeProfile, 0.0)
+    array.fill(buyVolume, 0.0)
+    array.fill(sellVolume, 0.0)
+
+// Accumulate volume in each price level
+if bar_index >= profileBars and priceStep > 0
+    // Determine which row this bar's volume belongs to
+    rowIndex = math.floor((close - minPrice) / priceStep)
+    rowIndex := math.max(0, math.min(rowSize - 1, rowIndex))
+    
+    // Add volume to appropriate row
+    currentVol = array.get(volumeProfile, rowIndex)
+    array.set(volumeProfile, rowIndex, currentVol + volume)
+    
+    // Classify as buy or sell volume based on close vs open
+    if close >= open
+        currentBuyVol = array.get(buyVolume, rowIndex)
+        array.set(buyVolume, rowIndex, currentBuyVol + volume)
+    else
+        currentSellVol = array.get(sellVolume, rowIndex)
+        array.set(sellVolume, rowIndex, currentSellVol + volume)
+
+// Find Point of Control (POC) - price level with highest volume
+pocIndex = 0
+maxVolume = 0.0
+
+for i = 0 to rowSize - 1
+    vol = array.get(volumeProfile, i)
+    if vol > maxVolume
+        maxVolume := vol
+        pocIndex := i
+
+pocPrice = minPrice + (pocIndex * priceStep) + (priceStep / 2)
+
+// Calculate Value Area (70% of total volume)
+totalVolume = array.sum(volumeProfile)
+valueAreaVolume = totalVolume * 0.70
+var int vahIndex = pocIndex  // Value Area High
+var int valIndex = pocIndex  // Value Area Low
+
+accumulatedVolume = array.get(volumeProfile, pocIndex)
+expanding = true
+aboveIndex = pocIndex + 1
+belowIndex = pocIndex - 1
+
+while expanding and accumulatedVolume < valueAreaVolume
+    aboveVol = aboveIndex < rowSize ? array.get(volumeProfile, aboveIndex) : 0.0
+    belowVol = belowIndex >= 0 ? array.get(volumeProfile, belowIndex) : 0.0
+    
+    if aboveVol >= belowVol and aboveIndex < rowSize
+        accumulatedVolume += aboveVol
+        vahIndex := aboveIndex
+        aboveIndex += 1
+    else if belowIndex >= 0
+        accumulatedVolume += belowVol
+        valIndex := belowIndex
+        belowIndex -= 1
+    else
+        expanding := false
+
+vahPrice = minPrice + (vahIndex * priceStep) + priceStep
+valPrice = minPrice + (valIndex * priceStep)
+
+// ════════════════════════════════════════════════════════════════════════
+// VOLUME DELTA CALCULATION
+// ════════════════════════════════════════════════════════════════════════
+
+// Calculate volume delta (buying pressure - selling pressure)
+volumeDelta = close >= open ? volume : -volume
+cumulativeDelta = ta.cum(volumeDelta)
+deltaMA = ta.sma(volumeDelta, deltaMALength)
+
+// Current bar delta status
+bullishDelta = volumeDelta > 0 and volumeDelta > deltaMA
+bearishDelta = volumeDelta < 0 and volumeDelta < deltaMA
+
+// ════════════════════════════════════════════════════════════════════════
+// VOLUME NODES
+// ════════════════════════════════════════════════════════════════════════
+
+volumeMA = ta.sma(volume, volumeMALength)
+highVolumeNode = volume > (volumeMA * nodeThreshold)
+lowVolumeNode = volume < (volumeMA / nodeThreshold)
+
+// ════════════════════════════════════════════════════════════════════════
+// PLOTTING
+// ════════════════════════════════════════════════════════════════════════
+
+// Plot VWAP
+plot(showVWAP ? vwap : na, title="VWAP", color=color.new(color.yellow, 0), linewidth=2, style=plot.style_line)
+
+// Plot VWAP Bands
+vwapU1 = plot(showVWAPBands ? vwapUpper1 : na, title="VWAP Upper 1", color=color.new(color.red, 70), linewidth=1)
+vwapL1 = plot(showVWAPBands ? vwapLower1 : na, title="VWAP Lower 1", color=color.new(color.green, 70), linewidth=1)
+vwapU2 = plot(showVWAPBands ? vwapUpper2 : na, title="VWAP Upper 2", color=color.new(color.red, 85), linewidth=1, style=plot.style_circles)
+vwapL2 = plot(showVWAPBands ? vwapLower2 : na, title="VWAP Lower 2", color=color.new(color.green, 85), linewidth=1, style=plot.style_circles)
+
+fill(vwapU1, vwapL1, color=color.new(color.yellow, 95), title="VWAP Band Fill")
+
+// Plot Point of Control
+var line pocLine = na
+if barstate.islast and showPOC
+    line.delete(pocLine)
+    pocLine := line.new(bar_index - profileBars, pocPrice, bar_index, pocPrice, 
+                        color=color.new(color.red, 0), width=3, style=line.style_solid)
+    label.new(bar_index, pocPrice, "POC", style=label.style_label_left, 
+              color=color.new(color.red, 20), textcolor=color.white, size=size.small)
+
+// Plot Value Area
+var line vahLine = na
+var line valLine = na
+if barstate.islast and showValueArea
+    line.delete(vahLine)
+    line.delete(valLine)
+    vahLine := line.new(bar_index - profileBars, vahPrice, bar_index, vahPrice, 
+                        color=color.new(color.blue, 50), width=2, style=line.style_dashed)
+    valLine := line.new(bar_index - profileBars, valPrice, bar_index, valPrice, 
+                        color=color.new(color.blue, 50), width=2, style=line.style_dashed)
+    label.new(bar_index, vahPrice, "VAH", style=label.style_label_left, 
+              color=color.new(color.blue, 50), textcolor=color.white, size=size.tiny)
+    label.new(bar_index, valPrice, "VAL", style=label.style_label_left, 
+              color=color.new(color.blue, 50), textcolor=color.white, size=size.tiny)
+
+// Mark high/low volume nodes
+plotshape(showVolumeNodes and highVolumeNode ? high : na, 
+          title="High Volume Node", location=location.abovebar, 
+          color=color.new(color.purple, 50), style=shape.diamond, size=size.tiny)
+
+plotshape(showVolumeNodes and lowVolumeNode ? low : na, 
+          title="Low Volume Node", location=location.belowbar, 
+          color=color.new(color.orange, 50), style=shape.diamond, size=size.tiny)
+
+// Color bars by volume delta
+barcolor(showDelta ? (bullishDelta ? color.new(color.green, 70) : bearishDelta ? color.new(color.red, 70) : na) : na)
+
+// ════════════════════════════════════════════════════════════════════════
+// INFO TABLE
+// ════════════════════════════════════════════════════════════════════════
+
+var table infoTable = table.new(position.bottom_right, 2, 8, bgcolor=color.new(color.gray, 90), border_width=1)
+
+if barstate.islast
+    table.cell(infoTable, 0, 0, "Volume Profile Analysis", text_color=color.white, bgcolor=color.new(color.purple, 30))
+    table.merge_cells(infoTable, 0, 0, 1, 0)
+    
+    table.cell(infoTable, 0, 1, "VWAP:", text_color=color.white)
+    table.cell(infoTable, 1, 1, str.tostring(vwap, format.mintick), text_color=color.yellow)
+    
+    table.cell(infoTable, 0, 2, "POC Price:", text_color=color.white)
+    table.cell(infoTable, 1, 2, str.tostring(pocPrice, format.mintick), text_color=color.red)
+    
+    table.cell(infoTable, 0, 3, "Value Area:", text_color=color.white)
+    valueAreaText = str.tostring(valPrice, format.mintick) + " - " + str.tostring(vahPrice, format.mintick)
+    table.cell(infoTable, 1, 3, valueAreaText, text_color=color.blue)
+    
+    table.cell(infoTable, 0, 4, "Price vs VWAP:", text_color=color.white)
+    vwapDiff = ((close - vwap) / vwap) * 100
+    vwapStatus = close > vwap ? "Above +" + str.tostring(vwapDiff, "#.##") + "%" : "Below " + str.tostring(vwapDiff, "#.##") + "%"
+    table.cell(infoTable, 1, 4, vwapStatus, text_color=close > vwap ? color.green : color.red)
+    
+    table.cell(infoTable, 0, 5, "Volume Delta:", text_color=color.white)
+    deltaColor = volumeDelta > 0 ? color.green : color.red
+    table.cell(infoTable, 1, 5, str.tostring(volumeDelta, format.volume), text_color=deltaColor)
+    
+    table.cell(infoTable, 0, 6, "Delta Trend:", text_color=color.white)
+    deltaTrend = volumeDelta > deltaMA ? "Buying ↑" : "Selling ↓"
+    table.cell(infoTable, 1, 6, deltaTrend, text_color=volumeDelta > deltaMA ? color.green : color.red)
+    
+    table.cell(infoTable, 0, 7, "Profile Bars:", text_color=color.white)
+    table.cell(infoTable, 1, 7, str.tostring(profileBars), text_color=color.gray)
+
+// ════════════════════════════════════════════════════════════════════════
+// TRADING SIGNALS
+// ════════════════════════════════════════════════════════════════════════
+
+// Price near POC can act as support/resistance
+nearPOC = math.abs(close - pocPrice) / close < 0.01
+
+// Price testing value area boundaries
+testingVAH = math.abs(close - vahPrice) / close < 0.005
+testingVAL = math.abs(close - valPrice) / close < 0.005
+
+// Signal when price returns to VWAP after deviation
+vwapDeviation = math.abs(close - vwap) / vwap
+returnToVWAP = vwapDeviation < 0.005 and vwapDeviation[1] > 0.02
+
+plotshape(returnToVWAP ? close : na, 
+          title="Return to VWAP", location=location.belowbar, 
+          color=color.new(color.yellow, 0), style=shape.xcross, size=size.small)

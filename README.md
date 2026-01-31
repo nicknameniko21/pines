@@ -1,5 +1,7 @@
 # Crypto Volatility Dashboard
 
+> **📌 CONFUSED ABOUT WHAT'S IN THIS REPO?** Check [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for a clear guide showing the **1 Website** + **4 Pine Scripts** and where everything is located!
+
 Dashboard de análise de volatilidade de criptomoedas em tempo real, planejado para rastrear os principais tokens (ex.: top 20) e escalável para monitorar centenas ou milhares de ativos conforme a API disponível.
 
 ## Estrutura do Projeto
