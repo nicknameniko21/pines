@@ -77,13 +77,21 @@ var bool hiddenBearishDivDetected = false
 var int totalBullDiv = 0
 var int totalBearDiv = 0
 
+// Temporary variables for current pivot values (reused per bar)
+float currentHighPrice = na
+float currentHighRSI = na
+int currentHighBar = na
+float currentLowPrice = na
+float currentLowRSI = na
+int currentLowBar = na
+
 // ==================== BEARISH DIVERGENCE LOGIC ====================
 // Regular Bearish Divergence: Price makes higher high, RSI makes lower high (trend reversal)
 // Hidden Bearish Divergence: Price makes lower high, RSI makes higher high (trend continuation)
 if not na(pivotHigh) and not na(pricePivotHigh)
-    currentHighPrice = high[pivotLookback]
-    currentHighRSI = rsi[pivotLookback]
-    currentHighBar = bar_index - pivotLookback
+    currentHighPrice := high[pivotLookback]
+    currentHighRSI := rsi[pivotLookback]
+    currentHighBar := bar_index - pivotLookback
     
     bearishDivDetected := false
     hiddenBearishDivDetected := false
@@ -145,9 +153,9 @@ else
 // Regular Bullish Divergence: Price makes lower low, RSI makes higher low (trend reversal)
 // Hidden Bullish Divergence: Price makes higher low, RSI makes lower low (trend continuation)
 if not na(pivotLow) and not na(pricePivotLow)
-    currentLowPrice = low[pivotLookback]
-    currentLowRSI = rsi[pivotLookback]
-    currentLowBar = bar_index - pivotLookback
+    currentLowPrice := low[pivotLookback]
+    currentLowRSI := rsi[pivotLookback]
+    currentLowBar := bar_index - pivotLookback
     
     bullishDivDetected := false
     hiddenBullishDivDetected := false
@@ -254,7 +262,7 @@ if showTable
          text_size=size.tiny, text_font_family=font.family_monospace)
     
     // Divergence Count
-    divCount = "B:" + str.tostring(totalBullDiv) + " / S:" + str.tostring(totalBearDiv)
+    divCount = "Bull:" + str.tostring(totalBullDiv) + " / Bear:" + str.tostring(totalBearDiv)
     table.cell(signalTable, 0, 4, "Total Count", 
          bgcolor=color.new(color.gray, 90), text_color=color.white, 
          text_size=size.tiny, text_font_family=font.family_monospace)
