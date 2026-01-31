@@ -118,13 +118,18 @@ pines/
 │   └── dist/                         # Build output
 │
 ├── 📈 TRADINGVIEW PINE SCRIPTS
-│   ├── VolatilitySignals.pine       # Script 1: Volatility signals
-│   ├── RSIDivergence.pine           # Script 2: RSI divergence
-│   ├── BBBreakout.pine              # Script 3: Bollinger breakout
-│   └── VolumeProfile.pine           # Script 4: Volume analysis
+│   └── pine-scripts/                # All Pine scripts in one folder! ⭐
+│       ├── VolatilitySignals.pine   # Script 1: Volatility signals
+│       ├── RSIDivergence.pine       # Script 2: RSI divergence
+│       ├── BBBreakout.pine          # Script 3: Bollinger breakout
+│       ├── VolumeProfile.pine       # Script 4: Volume analysis
+│       └── README.md                # Instructions for using the scripts
 │
 ├── 📚 DOCUMENTATION
 │   ├── README.md                     # Main documentation (PT-BR)
+│   ├── QUICK_START.md                # Fastest way to get started ⭐
+│   ├── HOW_TO_USE.md                 # Simple guide for non-coders
+│   ├── DEPLOYMENT.md                 # How to deploy the website ⭐
 │   ├── PROJECT_STRUCTURE.md          # This file - what is what
 │   ├── TRADING_GUIDE.md              # Complete trading guide
 │   ├── USAGE_GUIDE.md                # Dashboard usage guide
