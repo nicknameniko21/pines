@@ -64,7 +64,7 @@ body_ratio = candle_range > 0 ? candle_body / candle_range : 0
 
 // RSI Score: Returns positive for bullish, negative for bearish
 calc_rsi_score() =>
-    var float score = 0.0
+    float score = 0.0
     if rsi < rsi_oversold
         score := 2.0  // Strong bullish
     else if rsi < 40
@@ -79,7 +79,7 @@ calc_rsi_score() =>
 
 // EMA Score: Evaluates trend and crossovers
 calc_ema_score() =>
-    var float score = 0.0
+    float score = 0.0
     
     // Fast/Slow EMA crossover
     fast_above_slow = ema_fast > ema_slow
@@ -111,7 +111,7 @@ calc_ema_score() =>
 
 // Volume Score: Confirms price action with volume
 calc_volume_score() =>
-    var float score = 0.0
+    float score = 0.0
     
     bullish_candle = close > open
     bearish_candle = close < open
@@ -131,7 +131,7 @@ calc_volume_score() =>
 
 // Price Action Score: Evaluates candle patterns
 calc_price_action_score() =>
-    var float score = 0.0
+    float score = 0.0
     
     strong_body = body_ratio > candle_body_threshold
     bullish_candle = close > open
