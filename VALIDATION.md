@@ -169,7 +169,7 @@ Recommended settings:
 
 ### 10. Testing on TradingView
 
-1. Open TradingView (tradingview.com)
+1. Open TradingView (https://www.tradingview.com)
 2. Open a chart (e.g., BTC/USD, SPY, etc.)
 3. Click "Indicators" and select "Pine Editor"
 4. Paste the TradingAlerts_All.pine code
