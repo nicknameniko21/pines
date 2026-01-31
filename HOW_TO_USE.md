@@ -14,12 +14,13 @@ Shows you real-time cryptocurrency prices and volatility analysis
 
 **Step 1:** Install Node.js from https://nodejs.org (if you don't have it)
 
-**Step 2:** Open a terminal/command prompt and type:
+**Step 2:** Open a terminal/command prompt in the repository folder and type:
 ```bash
-cd /home/runner/work/pines/pines
 npm install
 npm run dev
 ```
+
+(Or if you're not in the folder yet: `cd pines` first)
 
 **Step 3:** Open your browser and go to: http://localhost:5173
 
