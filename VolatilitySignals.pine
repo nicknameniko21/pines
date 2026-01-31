@@ -31,6 +31,11 @@ enableRSI = input.bool(true, title="Enable RSI Signals", group="Signal Filters")
 enableEMA = input.bool(true, title="Enable EMA Signals", group="Signal Filters")
 enableBB = input.bool(true, title="Enable BB Signals", group="Signal Filters")
 enableVolume = input.bool(true, title="Enable Volume Filter", group="Signal Filters")
+minSignalGap = input.int(5, title="Min Bars Between Signals", minval=1, group="Signal Filters", tooltip="Minimum number of bars between consecutive signals to reduce noise")
+
+// Display Settings
+showStopLoss = input.bool(true, title="Show Stop Loss/Take Profit", group="Display Settings")
+showSignalStrength = input.bool(true, title="Show Signal Strength", group="Display Settings")
 
 // ════════════════════════════════════════════════════════════════════════
 // INDICATOR CALCULATIONS
@@ -55,6 +60,11 @@ atrValue = ta.atr(atrLength)
 // Volume Analysis
 volumeMA = ta.sma(volume, volumeMALength)
 isHighVolume = volume > volumeMA * volumeMultiplier
+volumeIncreasing = volume > volume[1]
+
+// Price Action Analysis
+priceAboveEMA = close > emaFast and close > emaSlow
+priceBelowEMA = close < emaFast and close < emaSlow
 
 // ════════════════════════════════════════════════════════════════════════
 // SIGNAL LOGIC
@@ -63,30 +73,74 @@ isHighVolume = volume > volumeMA * volumeMultiplier
 // RSI Signals
 rsiBullish = rsiValue < rsiOversold
 rsiBearish = rsiValue > rsiOverbought
+rsiNeutralBullish = rsiValue > rsiOversold and rsiValue < 50
+rsiNeutralBearish = rsiValue < rsiOverbought and rsiValue > 50
 
 // EMA Crossover Signals
 emaBullishCross = ta.crossover(emaFast, emaSlow)
 emaBearishCross = ta.crossunder(emaFast, emaSlow)
+emaTrendBullish = emaFast > emaSlow
+emaTrendBearish = emaFast < emaSlow
 
 // Bollinger Bands Signals
 bbBullish = close < bbLower
 bbBearish = close > bbUpper
+bbBullishRebound = close[1] < bbLower and close > bbLower // Price rebounding from lower band
+bbBearishRebound = close[1] > bbUpper and close < bbUpper // Price rebounding from upper band
 
-// Price momentum (using close vs previous close)
-priceBullish = close > close[1]
-priceBearish = close < close[1]
+// Calculate signal strength (0-4 scale)
+bullishStrength = (rsiBullish ? 1 : 0) + (emaTrendBullish ? 1 : 0) + (bbBullish ? 1 : 0) + (isHighVolume ? 1 : 0)
+bearishStrength = (rsiBearish ? 1 : 0) + (emaTrendBearish ? 1 : 0) + (bbBearish ? 1 : 0) + (isHighVolume ? 1 : 0)
 
-// Combined Buy Signal
-buySignal = (not enableRSI or rsiBullish) and 
-            (not enableEMA or emaBullishCross) and 
-            (not enableBB or bbBullish) and 
-            (not enableVolume or isHighVolume)
+// Enhanced Buy Signal with multiple conditions
+buyCondition1 = emaBullishCross and (not enableRSI or rsiNeutralBullish or rsiBullish) and (not enableVolume or isHighVolume)
+buyCondition2 = bbBullishRebound and emaTrendBullish and (not enableRSI or rsiBullish or rsiNeutralBullish) and (not enableVolume or isHighVolume)
+buyCondition3 = rsiBullish and emaTrendBullish and bbBullish and (not enableVolume or volumeIncreasing)
 
-// Combined Sell Signal
-sellSignal = (not enableRSI or rsiBearish) and 
-             (not enableEMA or emaBearishCross) and 
-             (not enableBB or bbBearish) and 
-             (not enableVolume or isHighVolume)
+// Enhanced Sell Signal with multiple conditions
+sellCondition1 = emaBearishCross and (not enableRSI or rsiNeutralBearish or rsiBearish) and (not enableVolume or isHighVolume)
+sellCondition2 = bbBearishRebound and emaTrendBearish and (not enableRSI or rsiBearish or rsiNeutralBearish) and (not enableVolume or isHighVolume)
+sellCondition3 = rsiBearish and emaTrendBearish and bbBearish and (not enableVolume or volumeIncreasing)
+
+// Combine conditions based on enabled filters
+var int lastBuyBar = na
+var int lastSellBar = na
+
+buySignalRaw = (enableEMA and buyCondition1) or 
+               (enableBB and buyCondition2) or 
+               (enableRSI and enableEMA and enableBB and buyCondition3)
+
+sellSignalRaw = (enableEMA and sellCondition1) or 
+                (enableBB and sellCondition2) or 
+                (enableRSI and enableEMA and enableBB and sellCondition3)
+
+// Apply minimum gap filter to prevent signal spam
+buySignal = buySignalRaw and (na(lastBuyBar) or bar_index - lastBuyBar >= minSignalGap) and 
+            (na(lastSellBar) or bar_index - lastSellBar >= minSignalGap)
+sellSignal = sellSignalRaw and (na(lastSellBar) or bar_index - lastSellBar >= minSignalGap) and 
+             (na(lastBuyBar) or bar_index - lastBuyBar >= minSignalGap)
+
+// Update last signal bars
+if buySignal
+    lastBuyBar := bar_index
+if sellSignal
+    lastSellBar := bar_index
+
+// Calculate Stop Loss and Take Profit levels
+var float buyPrice = na
+var float sellPrice = na
+var float stopLoss = na
+var float takeProfit = na
+
+if buySignal
+    buyPrice := close
+    stopLoss := close - (atrValue * atrMultiplier)
+    takeProfit := close + (atrValue * atrMultiplier * 2) // 2:1 reward-risk ratio
+
+if sellSignal
+    sellPrice := close
+    stopLoss := close + (atrValue * atrMultiplier)
+    takeProfit := close - (atrValue * atrMultiplier * 2) // 2:1 reward-risk ratio
 
 // ════════════════════════════════════════════════════════════════════════
 // PLOTTING
@@ -110,6 +164,15 @@ plotshape(buySignal, style=shape.labelup, location=location.belowbar,
 plotshape(sellSignal, style=shape.labeldown, location=location.abovebar, 
           color=color.new(color.red, 0), size=size.normal, 
           title="Sell Signal", text="SELL")
+
+// Plot Stop Loss and Take Profit levels
+plot(showStopLoss and not na(stopLoss) ? stopLoss : na, 
+     color=color.new(color.red, 0), style=plot.style_cross, linewidth=2, 
+     title="Stop Loss", trackprice=true)
+
+plot(showStopLoss and not na(takeProfit) ? takeProfit : na, 
+     color=color.new(color.green, 0), style=plot.style_cross, linewidth=2, 
+     title="Take Profit", trackprice=true)
 
 // Background color based on trend
 trendColor = emaFast > emaSlow ? color.new(color.green, 95) : color.new(color.red, 95)
@@ -135,7 +198,7 @@ alertcondition(emaBearishCross, title="Bearish EMA Cross",
 // TABLE - INDICATOR VALUES DISPLAY
 // ════════════════════════════════════════════════════════════════════════
 
-var table infoTable = table.new(position.top_right, 2, 6, 
+var table infoTable = table.new(position.top_right, 2, 7, 
                                  border_width=1, 
                                  border_color=color.gray, 
                                  frame_width=1, 
@@ -182,3 +245,14 @@ if barstate.islast
     table.cell(infoTable, 0, 5, "Volume", text_color=color.white)
     table.cell(infoTable, 1, 5, volumeText, 
                text_color=color.white, bgcolor=color.new(volumeColor, 70))
+    
+    // Signal Strength (if enabled)
+    if showSignalStrength
+        strengthValue = bullishStrength > bearishStrength ? bullishStrength : -bearishStrength
+        strengthText = str.tostring(math.abs(strengthValue)) + "/4 " + 
+                      (strengthValue > 0 ? "Bull" : strengthValue < 0 ? "Bear" : "Neutral")
+        strengthColor = strengthValue > 0 ? color.green : 
+                       strengthValue < 0 ? color.red : color.gray
+        table.cell(infoTable, 0, 6, "Strength", text_color=color.white)
+        table.cell(infoTable, 1, 6, strengthText, 
+                   text_color=color.white, bgcolor=color.new(strengthColor, 70))
