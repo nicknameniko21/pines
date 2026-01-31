@@ -20,6 +20,13 @@ export default function Dashboard() {
   
   const { data: tokens, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/tokens"],
+    queryFn: async () => {
+      const res = await fetch("/api/tokens");
+      if (!res.ok) {
+        throw new Error("Failed to fetch tokens");
+      }
+      return res.json();
+    },
     refetchInterval: 60000
   });
 
@@ -75,7 +82,7 @@ export default function Dashboard() {
     return now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   }, []);
 
-  const filteredAndSortedTokens = tokens?.filter((token) => {
+  const filteredAndSortedTokens = Array.isArray(tokens) ? tokens.filter((token) => {
     if (filters.alphaOnly && !token.isAlpha) return false;
     if (filters.searchTerm) {
       const search = filters.searchTerm.toLowerCase();
@@ -122,7 +129,7 @@ export default function Dashboard() {
         comparison = 0;
     }
     return comparison;
-  });
+  }) : [];
 
   if (isLoading) {
     return (

@@ -1,6 +1,6 @@
 # Crypto Volatility Dashboard
 
-Dashboard de análise de volatilidade de criptomoedas em tempo real, rastreando os 20 principais tokens com maior probabilidade de movimentos significativos de preço.
+Dashboard de análise de volatilidade de criptomoedas em tempo real, planejado para rastrear os principais tokens (ex.: top 20) e escalável para monitorar centenas ou milhares de ativos conforme a API disponível.
 
 ## Estrutura do Projeto
 

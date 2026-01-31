@@ -97,7 +97,9 @@ export function FilterControls({ filters, onFiltersChange }: FilterControlsProps
                 <SelectItem value="large">Large Cap ($10B+)</SelectItem>
                 <SelectItem value="mid">Mid Cap ($1B-$10B)</SelectItem>
                 <SelectItem value="small">Small Cap ($100M-$1B)</SelectItem>
-                <SelectItem value="micro">Micro Cap (&lt;$100M)</SelectItem>
+                <SelectItem value="micro">
+                  Micro Cap (&lt;$100M)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
