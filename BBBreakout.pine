@@ -169,7 +169,7 @@ plotshape(
     color=color.new(color.lime, 0),
     style=shape.triangleup,
     size=size.normal,
-    text="🚀"
+    text="STRONG\nBUY"
 )
 
 plotshape(
@@ -179,7 +179,7 @@ plotshape(
     color=color.new(color.maroon, 0),
     style=shape.triangledown,
     size=size.normal,
-    text="💥"
+    text="STRONG\nSELL"
 )
 
 // ════════════════════════════════════════════════════════════════════════
@@ -214,12 +214,12 @@ if enableAlerts
         alert("BB Squeeze detected! Low volatility period may lead to explosive breakout soon.", alert.freq_once_per_bar_close)
     
     if bullishBreakoutAfterSqueeze
-        alert("🚀 HIGH PROBABILITY Bullish Breakout! Price broke above Bollinger Bands after squeeze with high volume.", alert.freq_once_per_bar_close)
+        alert("HIGH PROBABILITY Bullish Breakout! Price broke above Bollinger Bands after squeeze with high volume.", alert.freq_once_per_bar_close)
     else if bullishBreakout
         alert("Bullish Breakout! Price closed above upper Bollinger Band.", alert.freq_once_per_bar_close)
     
     if bearishBreakoutAfterSqueeze
-        alert("💥 HIGH PROBABILITY Bearish Breakout! Price broke below Bollinger Bands after squeeze with high volume.", alert.freq_once_per_bar_close)
+        alert("HIGH PROBABILITY Bearish Breakout! Price broke below Bollinger Bands after squeeze with high volume.", alert.freq_once_per_bar_close)
     else if bearishBreakout
         alert("Bearish Breakout! Price closed below lower Bollinger Band.", alert.freq_once_per_bar_close)
 
@@ -240,7 +240,7 @@ if barstate.islast
     table.cell(infoTable, 1, 2, str.tostring(bandwidthPercentile, "#.#") + "%", text_color=color.gray)
     
     table.cell(infoTable, 0, 3, "Squeeze:", text_color=color.white)
-    squeezeText = inSqueeze ? "YES ⚠️" : "No"
+    squeezeText = inSqueeze ? "YES (!)": "No"
     table.cell(infoTable, 1, 3, squeezeText, text_color=inSqueeze ? color.orange : color.gray)
     
     table.cell(infoTable, 0, 4, "%B Position:", text_color=color.white)
