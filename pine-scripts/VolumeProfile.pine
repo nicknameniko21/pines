@@ -39,7 +39,7 @@ newPeriod = switch vwapPeriod
     "Session" => ta.change(time("D"))
     "Week" => ta.change(time("W"))
     "Month" => ta.change(time("M"))
-    => false
+    => false  // Default: no period change detected
 
 // Calculate VWAP
 var float sumVP = 0.0
