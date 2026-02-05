@@ -134,7 +134,7 @@ valueAreaVolume = totalVolume * 0.70
 var int vahIndex = pocIndex  // Value Area High
 var int valIndex = pocIndex  // Value Area Low
 
-// Initialize variables for while loop
+// Variables for value area calculation
 float accumulatedVolume = array.get(volumeProfile, pocIndex)
 bool expanding = true
 int aboveIndex = pocIndex + 1
@@ -145,13 +145,13 @@ while expanding and accumulatedVolume < valueAreaVolume
     belowVol = belowIndex >= 0 ? array.get(volumeProfile, belowIndex) : 0.0
     
     if aboveVol >= belowVol and aboveIndex < rowSize
-        accumulatedVolume := accumulatedVolume + aboveVol
+        accumulatedVolume += aboveVol
         vahIndex := aboveIndex
-        aboveIndex := aboveIndex + 1
+        aboveIndex += 1
     else if belowIndex >= 0
-        accumulatedVolume := accumulatedVolume + belowVol
+        accumulatedVolume += belowVol
         valIndex := belowIndex
-        belowIndex := belowIndex - 1
+        belowIndex -= 1
     else
         expanding := false
 
