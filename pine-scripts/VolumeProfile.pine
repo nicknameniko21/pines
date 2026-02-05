@@ -102,7 +102,7 @@ if bar_index % profileBars == 0
 if bar_index >= profileBars and priceStep > 0
     // Determine which row this bar's volume belongs to
     rowIndex = int(math.floor((close - minPrice) / priceStep))
-    rowIndex := int(math.max(0, math.min(rowSize - 1, rowIndex)))
+    rowIndex := math.max(0, math.min(rowSize - 1, rowIndex))
     
     // Add volume to appropriate row
     currentVol = array.get(volumeProfile, rowIndex)
