@@ -39,6 +39,7 @@ newPeriod = switch vwapPeriod
     "Session" => ta.change(time("D"))
     "Week" => ta.change(time("W"))
     "Month" => ta.change(time("M"))
+    => false
 
 // Calculate VWAP
 var float sumVP = 0.0
@@ -100,8 +101,8 @@ if bar_index % profileBars == 0
 // Accumulate volume in each price level
 if bar_index >= profileBars and priceStep > 0
     // Determine which row this bar's volume belongs to
-    rowIndex = math.floor((close - minPrice) / priceStep)
-    rowIndex := math.max(0, math.min(rowSize - 1, rowIndex))
+    rowIndex = int(math.floor((close - minPrice) / priceStep))
+    rowIndex := int(math.max(0, math.min(rowSize - 1, rowIndex)))
     
     // Add volume to appropriate row
     currentVol = array.get(volumeProfile, rowIndex)
@@ -133,23 +134,29 @@ valueAreaVolume = totalVolume * 0.70
 var int vahIndex = pocIndex  // Value Area High
 var int valIndex = pocIndex  // Value Area Low
 
-accumulatedVolume = array.get(volumeProfile, pocIndex)
-expanding = true
-aboveIndex = pocIndex + 1
-belowIndex = pocIndex - 1
+var float accumulatedVolume = array.get(volumeProfile, pocIndex)
+var bool expanding = true
+var int aboveIndex = pocIndex + 1
+var int belowIndex = pocIndex - 1
+
+// Reset for each calculation
+accumulatedVolume := array.get(volumeProfile, pocIndex)
+expanding := true
+aboveIndex := pocIndex + 1
+belowIndex := pocIndex - 1
 
 while expanding and accumulatedVolume < valueAreaVolume
     aboveVol = aboveIndex < rowSize ? array.get(volumeProfile, aboveIndex) : 0.0
     belowVol = belowIndex >= 0 ? array.get(volumeProfile, belowIndex) : 0.0
     
     if aboveVol >= belowVol and aboveIndex < rowSize
-        accumulatedVolume += aboveVol
+        accumulatedVolume := accumulatedVolume + aboveVol
         vahIndex := aboveIndex
-        aboveIndex += 1
+        aboveIndex := aboveIndex + 1
     else if belowIndex >= 0
-        accumulatedVolume += belowVol
+        accumulatedVolume := accumulatedVolume + belowVol
         valIndex := belowIndex
-        belowIndex -= 1
+        belowIndex := belowIndex - 1
     else
         expanding := false
 

@@ -186,11 +186,11 @@ plotshape(
 // BREAKOUT ZONES
 // ════════════════════════════════════════════════════════════════════════
 
+// Draw zones for potential breakout targets
+var line upperTarget = na
+var line lowerTarget = na
+
 if showZones
-    // Draw zones for potential breakout targets
-    var line upperTarget = na
-    var line lowerTarget = na
-    
     if bullishBreakout
         // Target is next resistance (2x bandwidth above upper band)
         targetPrice = upperBand + (2 * dev)

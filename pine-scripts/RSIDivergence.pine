@@ -17,7 +17,6 @@ minDivergenceStrength = input.float(5.0, title="Min Divergence Strength", minval
 // Display Settings
 showBullishDiv = input.bool(true, title="Show Bullish Divergence", group="Display")
 showBearishDiv = input.bool(true, title="Show Bearish Divergence", group="Display")
-showRSILine = input.bool(true, title="Show RSI Line", group="Display")
 showLabels = input.bool(true, title="Show Divergence Labels", group="Display")
 
 // Alert Settings
@@ -112,11 +111,8 @@ if not na(currentPivotHigh) and not na(lastPivotHigh)
 // PLOTTING
 // ════════════════════════════════════════════════════════════════════════
 
-// Plot RSI line in a separate pane
-rsiPlot = plot(showRSILine ? rsi : na, title="RSI", color=color.new(color.blue, 0), linewidth=2)
-hline(70, "Overbought", color=color.new(color.red, 50), linestyle=hline.style_dashed)
-hline(50, "Midline", color=color.new(color.gray, 80), linestyle=hline.style_dotted)
-hline(30, "Oversold", color=color.new(color.green, 50), linestyle=hline.style_dashed)
+// Note: RSI is not plotted on overlay chart, only divergence signals
+// To view RSI values, check the info table below or add RSI indicator separately
 
 // Plot divergence signals on main chart
 plotshape(
