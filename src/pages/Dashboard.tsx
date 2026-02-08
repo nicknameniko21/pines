@@ -114,11 +114,12 @@ export default function Dashboard() {
       case "volatility":
         comparison = b.volatilityScore - a.volatilityScore;
         break;
-      case "priceChange":
+      case "priceChange": {
         const aPriceChange = filters.timeframe === "1h" ? Math.abs(a.priceChangePercentage1h) : Math.abs(a.priceChangePercentage24h);
         const bPriceChange = filters.timeframe === "1h" ? Math.abs(b.priceChangePercentage1h) : Math.abs(b.priceChangePercentage24h);
         comparison = bPriceChange - aPriceChange;
         break;
+      }
       case "volume":
         comparison = b.volume24h - a.volume24h;
         break;
