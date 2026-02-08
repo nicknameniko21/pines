@@ -1,8 +1,8 @@
 # 📈 TradingView Pine Scripts
 
-This folder contains **4 professional Pine Script indicators** for TradingView.
+This folder contains **5 professional Pine Script indicators** for TradingView.
 
-## 🎯 The 4 Scripts
+## 🎯 The 5 Scripts
 
 ### 1. VolatilitySignals.pine
 **What it does:** Complete trading system with buy/sell signals
@@ -17,7 +17,20 @@ This folder contains **4 professional Pine Script indicators** for TradingView.
 
 ---
 
-### 2. RSIDivergence.pine
+### 2. VolatilityScore2.pine
+**What it does:** Adaptive multi-component volatility scoring system
+- ATR (Average True Range) analysis
+- Bollinger Bands width measurement
+- Standard Deviation calculation
+- Tunable component weightings (customize how each factor is weighted)
+- High/low volatility threshold alerts
+- Real-time volatility score (0-100 scale)
+
+**Best for:** Measuring market volatility to time entries/exits and identify high-probability setups
+
+---
+
+### 3. RSIDivergence.pine
 **What it does:** Detects RSI divergences for trend reversals
 - Automatic pivot point detection
 - Bullish divergence (price lower, RSI higher = buy signal)
@@ -29,7 +42,7 @@ This folder contains **4 professional Pine Script indicators** for TradingView.
 
 ---
 
-### 3. BBBreakout.pine
+### 4. BBBreakout.pine
 **What it does:** Bollinger Bands breakout and squeeze detector
 - Squeeze detection (low volatility = big move coming)
 - Breakout signals with volume confirmation
@@ -41,7 +54,7 @@ This folder contains **4 professional Pine Script indicators** for TradingView.
 
 ---
 
-### 4. VolumeProfile.pine
+### 5. VolumeProfile.pine
 **What it does:** Advanced volume analysis
 - VWAP (Volume Weighted Average Price)
 - POC (Point of Control - highest volume price)
@@ -131,10 +144,11 @@ Each script has customizable settings. Click the ⚙️ gear icon on the indicat
 
 ```
 pine-scripts/
-├── VolatilitySignals.pine    (13 KB) - Complete trading system
-├── RSIDivergence.pine         (8 KB)  - Divergence detector
-├── BBBreakout.pine            (11 KB) - Breakout & squeeze
-└── VolumeProfile.pine         (12 KB) - Volume analysis
+├── VolatilitySignals.pine    (14 KB) - Complete trading system
+├── VolatilityScore2.pine     (13 KB) - Adaptive volatility scoring
+├── RSIDivergence.pine        (10 KB) - Divergence detector
+├── BBBreakout.pine           (14 KB) - Breakout & squeeze
+└── VolumeProfile.pine        (15 KB) - Volume analysis
 ```
 
 ---
