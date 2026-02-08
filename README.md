@@ -1,10 +1,21 @@
-# Crypto Volatility Dashboard
+# 📊 Pines - Crypto Volatility Dashboard & TradingView Pine Scripts
 
-> **📌 CONFUSED ABOUT WHAT'S IN THIS REPO?** Check [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for a clear guide showing the **1 Website** + **4 Pine Scripts** and where everything is located!
+This repository contains **two main components**:
+
+1. **🌐 Crypto Volatility Dashboard** - A React/TypeScript/Vite web application for real-time cryptocurrency volatility analysis
+2. **📈 TradingView Pine Scripts** - A collection of 5 professional Pine Script v5 indicators for technical analysis
+
+---
+
+## 🌐 Crypto Volatility Dashboard
 
 Dashboard de análise de volatilidade de criptomoedas em tempo real, planejado para rastrear os principais tokens (ex.: top 20) e escalável para monitorar centenas ou milhares de ativos conforme a API disponível.
 
-## Estrutura do Projeto
+### Live Demo
+
+🚀 **[View Dashboard](https://nicknameniko21.github.io/pines/)**
+
+### Estrutura do Projeto
 
 ```
 src/
@@ -155,6 +166,89 @@ O projeto utiliza os seguintes componentes do shadcn/ui que precisam ser instala
 - Switch
 - Toaster
 - Tooltip
+
+---
+
+## 📈 TradingView Pine Scripts
+
+The `pine-scripts/` directory contains **5 professional Pine Script v5 indicators** ready to use in TradingView:
+
+1. **VolatilitySignals.pine** - Complete trading system with RSI, EMA, Bollinger Bands, ATR, and volume analysis
+2. **VolatilityScore2.pine** - Adaptive multi-component volatility scoring with tunable weightings
+3. **RSIDivergence.pine** - Pivot-based RSI divergence detection for trend reversals
+4. **BBBreakout.pine** - Bollinger Band squeeze and breakout signals with volume confirmation
+5. **VolumeProfile.pine** - Advanced volume analysis with VWAP, POC, and volume delta
+
+### How to Use Pine Scripts
+
+1. Open [TradingView](https://www.tradingview.com)
+2. Click on "Chart" and then "Pine Editor" at the bottom
+3. Copy the content of any `.pine` file from the `pine-scripts/` directory
+4. Paste into the Pine Editor and click "Add to Chart"
+
+📖 **[Full Pine Scripts Documentation](pine-scripts/README.md)**
+
+---
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 18+ and npm
+
+### Installation & Running
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint code
+npm run lint
+```
+
+---
+
+## 🚀 Deployment
+
+The dashboard is automatically deployed to GitHub Pages at [https://nicknameniko21.github.io/pines/](https://nicknameniko21.github.io/pines/) when changes are pushed to the main branch.
+
+The deployment workflow builds the Vite app and publishes the `dist/` directory to GitHub Pages.
+
+---
+
+## 📁 Repository Structure
+
+```
+pines/
+├── src/                          # React application source code
+│   ├── components/               # React components
+│   ├── pages/                    # Page components
+│   └── lib/                      # Utilities and configuration
+├── pine-scripts/                 # TradingView Pine Script indicators
+│   ├── VolatilitySignals.pine
+│   ├── VolatilityScore2.pine
+│   ├── RSIDivergence.pine
+│   ├── BBBreakout.pine
+│   ├── VolumeProfile.pine
+│   └── README.md                 # Pine scripts documentation
+├── dist/                         # Build output (not in git)
+├── node_modules/                 # Dependencies (not in git)
+├── index.html                    # HTML entry point
+├── vite.config.ts                # Vite configuration
+├── package.json                  # Project dependencies
+└── README.md                     # This file
+```
+
+---
 
 ## Licença
 
