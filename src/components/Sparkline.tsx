@@ -11,9 +11,10 @@ export function Sparkline({ data, isPositive }: SparklineProps) {
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
+  const divisor = data.length > 1 ? data.length - 1 : 1;
   
   const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * 100;
+    const x = (index / divisor) * 100;
     const y = 100 - ((value - min) / range) * 100;
     return `${x},${y}`;
   }).join(' ');
